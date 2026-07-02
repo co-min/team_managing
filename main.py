@@ -14,6 +14,7 @@ from function.io.subject_csv import append_trial_row, append_frame_rows
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
 from function.phases.feedback import run_feedback
+from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK
 
 
 DOMAINS = ['cooking', 'repairing', 'tennis']
@@ -85,6 +86,7 @@ def main() -> None:
     ctx = initiate()
     win = ctx.win
     subject_id = ctx.subject_id
+    handle = ctx.handle
     global_clock = core.Clock()
 
     competence, synergy, score = _load_all_data()
@@ -105,12 +107,12 @@ def main() -> None:
                 stim_pair_id=stim_pair_id,
             )
             run_gaussian_iti(win, global_clock, frame_log)
-            result = run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order)
+            result = run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle)
 
             fb_score = 0
             if result:
                 fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                run_feedback(win, global_clock, fb_score)
+                run_feedback(win, global_clock, fb_score, handle, TRIG_P1_FEEDBACK)
 
             _, record = save_trial_metadata(
                 subject_id=subject_id,
@@ -140,12 +142,12 @@ def main() -> None:
                 stim_pair_id=stim_pair_id,
             )
             run_gaussian_iti(win, global_clock, frame_log)
-            result = run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order)
+            result = run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle)
 
             fb_score = 0
             if result:
                 fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                run_feedback(win, global_clock, fb_score)
+                run_feedback(win, global_clock, fb_score, handle, TRIG_P2_FEEDBACK)
 
             _, record = save_trial_metadata(
                 subject_id=subject_id,

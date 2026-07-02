@@ -27,18 +27,24 @@ _LATCH_CIO_STATE = 0x01  # CIO0 = HIGH
 TRIG_RESET            = 0
 
 # =========================================
-# check trial
+# check trial (phase1 – competence)
 # =========================================
 
+ANIMAL_IDX        = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
 
-
+TRIG_P1_STIMULUS  = 0x10   # 0001_0000  stimulus onset
+TRIG_P1_CHOICE1   = 0x14   # 0001_01xx  + ANIMAL_IDX → 0x14~0x17
+TRIG_P1_CHOICE2   = 0x18   # 0001_10xx  + ANIMAL_IDX → 0x18~0x1B
+TRIG_P1_FEEDBACK  = 0x1C   # 0001_1100
 
 # =========================================
-# main belief trial
+# main belief trial (phase2 – synergy)
 # =========================================
 
-
-
+TRIG_P2_STIMULUS  = 0x20   # 0010_0000
+TRIG_P2_CHOICE1   = 0x24   # 0010_01xx  + ANIMAL_IDX → 0x24~0x27
+TRIG_P2_CHOICE2   = 0x28   # 0010_10xx  + ANIMAL_IDX → 0x28~0x2B
+TRIG_P2_FEEDBACK  = 0x2C   # 0010_1100
 
 # =========================================
 # stimulus presentation

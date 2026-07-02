@@ -37,6 +37,10 @@ from function.config.settings import MAX_RESPONSE_TIME
 from function.io.frame_logger import FrameRecorder
 from utils.arrow_keyboard import ArrowKeyboard
 from utils.event_utils import check_escape
+from utils.labjack_trigger import (
+    send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
+    TRIG_P2_STIMULUS, TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
+)
 
 # Animal name -> char_ani code (matches the 'synergy' dict keys in main.py)
 _CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
@@ -58,7 +62,8 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy):
         factory.block_stims[char_name].setFillColor(_SYNERGY_COLOR.get(score, 'white'))
 
 
-def _run_choice_loop(win, factory, kb, rec, char_list, synergy, excluded_idx=None):
+def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
+                     stim_trig, choice_trig_base, excluded_idx=None):
     """
     Arrow-key preview + space-to-confirm loop.
 
@@ -66,6 +71,7 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, excluded_idx=Non
     """
     clock = core.Clock()
     preview_idx = None
+    _stim_sent = False
 
     while True:
         check_escape(win)
@@ -77,6 +83,7 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, excluded_idx=Non
                     confirmed_idx  = preview_idx
                     confirmed_code = _CHAR_CODE[char_list[preview_idx]]
                     confirmed_rt   = t
+                    send_trigger(handle, choice_trig_base + ANIMAL_IDX[confirmed_code])
             else:
                 kb.reset_colors()
                 idx = kb.select(pressed, excluded_idx=excluded_idx)
@@ -99,10 +106,14 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, excluded_idx=Non
 
         factory.draw_base_scene(phase_type='phase2')
         kb.draw()
+        if not _stim_sent:
+            win.callOnFlip(send_trigger_async, handle, stim_trig)
+            win.callOnFlip(reset_trigger, handle)
+            _stim_sent = True
         rec.flip_and_log(win)
 
 
-def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
+def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle=None):
     """
     Run one Phase 2 trial.
 
@@ -133,7 +144,8 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
-        win, factory, kb, rec, char_list, synergy
+        win, factory, kb, rec, char_list, synergy,
+        handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE1,
     )
     if choice1_code is None:
         return None
@@ -147,7 +159,9 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
     _, choice2_code, rt2 = _run_choice_loop(
-        win, factory, kb, rec, char_list, synergy, excluded_idx=choice1_idx
+        win, factory, kb, rec, char_list, synergy,
+        handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
+        excluded_idx=choice1_idx,
     )
     if choice2_code is None:
         return None

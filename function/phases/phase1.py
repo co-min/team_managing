@@ -35,6 +35,10 @@ from function.config.settings import MAX_RESPONSE_TIME
 from function.io.frame_logger import FrameRecorder
 from utils.arrow_keyboard import ArrowKeyboard
 from utils.event_utils import check_escape
+from utils.labjack_trigger import (
+    send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
+    TRIG_P1_STIMULUS, TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
+)
 
 # Animal name -> char_ani code (matches the 'competence' dict in main.py)
 _CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
@@ -48,7 +52,7 @@ _LOCKED_SIZE = 212   # px – light-blue outline drawn around the locked Choice 
 _KB_Y = 0
 
 
-def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order):
+def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle=None):
     """
     Run one Phase 1 trial.
 
@@ -87,6 +91,8 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     rt1 = None
     clock = core.Clock()
 
+    win.callOnFlip(send_trigger_async, handle, TRIG_P1_STIMULUS)
+    win.callOnFlip(reset_trigger, handle)
     while choice1_code is None:
         check_escape(win)
         for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
@@ -95,6 +101,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                     choice1_idx  = preview_idx
                     choice1_code = _CHAR_CODE[char_list[preview_idx]]
                     rt1 = t
+                    send_trigger(handle, TRIG_P1_CHOICE1 + ANIMAL_IDX[choice1_code])
             else:
                 kb.reset_colors()
                 idx = kb.select(pressed)
@@ -132,6 +139,8 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     clock = core.Clock()
     choice2_code = None
 
+    win.callOnFlip(send_trigger_async, handle, TRIG_P1_STIMULUS)
+    win.callOnFlip(reset_trigger, handle)
     while choice2_code is None:
         check_escape(win)
         for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
@@ -139,6 +148,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                 if preview2_idx is not None:
                     choice2_code = _CHAR_CODE[char_list[preview2_idx]]
                     rt2 = t
+                    send_trigger(handle, TRIG_P1_CHOICE2 + ANIMAL_IDX[choice2_code])
             else:
                 kb.reset_colors()
                 idx = kb.select(pressed, excluded_idx=choice1_idx)

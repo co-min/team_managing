@@ -16,6 +16,7 @@ import math
 from psychopy import visual, core
 from function.config.settings import FB_TIME
 from utils.event_utils import check_escape
+from utils.labjack_trigger import send_trigger_async, reset_trigger
 
 _GAUGE_RADIUS = 160
 _NEEDLE_LEN   = 140
@@ -84,6 +85,8 @@ def run_feedback(
     win: visual.Window,
     global_clock: core.Clock,
     score: float,
+    handle=None,
+    trig_code: int = 0,
 ) -> None:
     """
     Display the gauge with the needle pointing directly at *score* along with intuitive text feedback for FB_TIME seconds.
@@ -117,12 +120,16 @@ def run_feedback(
     )
 
     clock = core.Clock()
-    
-    # 설정된 시간(FB_TIME) 동안 화면을 유지하며 ESC 입력을 감지합니다.
+    _trig_sent = False
+
     while clock.getTime() < FB_TIME:
         for stim in gauge_stims:
             stim.draw()
         needle.draw()
-        text_stim.draw() # 피드백 텍스트 그리기
+        text_stim.draw()
+        if not _trig_sent:
+            win.callOnFlip(send_trigger_async, handle, trig_code)
+            win.callOnFlip(reset_trigger, handle)
+            _trig_sent = True
         win.flip()
         check_escape(win)
