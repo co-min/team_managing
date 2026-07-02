@@ -25,8 +25,6 @@ def run_gaussian_iti(win, global_clock, frame_log, min_t=0.6, max_t=1.8, mean_t=
     phase_clock = core.Clock()
     frame_idx = 0
 
-    temp_log_data=[]
-
     while phase_clock.getTime() < iti_duration:
         flip_time = win.flip()
 
@@ -36,13 +34,7 @@ def run_gaussian_iti(win, global_clock, frame_log, min_t=0.6, max_t=1.8, mean_t=
         else:
             marker = ""
 
-        temp_log_data.append((
-            frame_idx, 
-            flip_time, 
-            global_clock.getTime(), 
-            marker
-        ))
-
+        frame_log = log_frame(frame_log, frame_idx, flip_time, global_clock.getTime(), marker)
         frame_idx += 1
         check_escape(win)
 

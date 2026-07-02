@@ -9,12 +9,13 @@ Trial flow
    the trial.
 
 2. A 4-directional ArrowKeyboard is displayed at the bottom-centre.
-   Pressing an arrow key directly selects the corresponding animal
-   (up=duck, down=frog, right=panda, left=rabbit).
+   Pressing an arrow key previews (highlights) the corresponding animal.
+   Space bar confirms the current preview as the choice.
 
 3. After Choice 1 is confirmed a light-blue locked indicator appears
    around the chosen animal and the corresponding arrow is dimmed.
-   The same arrow-key mechanic picks Choice 2 (locked animal excluded).
+   The same arrow-key + space-bar mechanic picks Choice 2
+   (locked animal excluded).
 
 4. Returns {'choice1': char_code, 'choice2': char_code} where
    char_code in {'A', 'B', 'C', 'D'}, or None on timeout.
@@ -82,17 +83,23 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
     choice1_idx = choice1_code = None
+    preview_idx = None
     rt1 = None
     clock = core.Clock()
 
     while choice1_code is None:
         check_escape(win)
-        for key, t in event.getKeys(keyList=kb.valid_keys, timeStamped=clock):
-            idx = kb.select(key)
-            if idx is not None:
-                choice1_idx  = idx
-                choice1_code = _CHAR_CODE[char_list[idx]]
-                rt1 = t
+        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+            if pressed == 'space':
+                if preview_idx is not None:
+                    choice1_idx  = preview_idx
+                    choice1_code = _CHAR_CODE[char_list[preview_idx]]
+                    rt1 = t
+            else:
+                kb.reset_colors()
+                idx = kb.select(pressed)
+                if idx is not None:
+                    preview_idx = idx
 
         if choice1_code is not None:
             factory.draw_base_scene(phase_type='phase1')
@@ -115,17 +122,23 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     rec.start_segment()
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
+    preview2_idx = None
     rt2 = None
     clock = core.Clock()
     choice2_code = None
 
     while choice2_code is None:
         check_escape(win)
-        for key, t in event.getKeys(keyList=kb.valid_keys, timeStamped=clock):
-            idx = kb.select(key, excluded_idx=choice1_idx)
-            if idx is not None:
-                choice2_code = _CHAR_CODE[char_list[idx]]
-                rt2 = t
+        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+            if pressed == 'space':
+                if preview2_idx is not None:
+                    choice2_code = _CHAR_CODE[char_list[preview2_idx]]
+                    rt2 = t
+            else:
+                kb.reset_colors()
+                idx = kb.select(pressed, excluded_idx=choice1_idx)
+                if idx is not None:
+                    preview2_idx = idx
 
         if choice2_code is not None:
             factory.draw_base_scene(phase_type='phase1')

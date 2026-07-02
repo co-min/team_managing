@@ -44,8 +44,6 @@ _CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
 # Synergy score -> block fill colour
 _SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
 
-# Colour for the locked Choice 1 block
-_LOCKED_COLOR = '#4488ff'
 
 # Vertical offset (px) below the animal grid where the ArrowKeyboard sits
 _KB_Y = 0
@@ -128,8 +126,8 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
         kb.draw()
         rec.flip_and_log(win)
 
-    # Mark the locked animal's block blue
-    factory.block_stims[char_list[choice1_idx]].setFillColor(_LOCKED_COLOR)
+    # Darken the locked animal's image with a semi-transparent overlay
+    factory.set_animal_locked(char_list[choice1_idx], True)
 
     # Set synergy-based block colours for the remaining three animals
     for i, char_name in enumerate(char_list):
@@ -161,6 +159,17 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
                 idx = kb.select(pressed, excluded_idx=choice1_idx)
                 if idx is not None:
                     preview2_idx = idx
+                    preview2_code = _CHAR_CODE[char_list[idx]]
+                    for i, char_name in enumerate(char_list):
+                        if i == idx:
+                            factory.block_stims[char_name].setFillColor('white')
+                        else:
+                            code_other = _CHAR_CODE[char_name]
+                            skey  = tuple(sorted([preview2_code, code_other]))
+                            score = synergy.get(skey, 0)
+                            factory.block_stims[char_name].setFillColor(
+                                _SYNERGY_COLOR.get(score, 'white')
+                            )
 
         if choice2_code is not None:
             factory.draw_base_scene(phase_type='phase2')

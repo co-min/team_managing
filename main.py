@@ -6,8 +6,10 @@ from psychopy import core
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
 from function.config.settings import P1_TRIALS, P2_TRIALS
-from function.io.frame_logger import make_frame_log
+from function.io.frame_logger import make_frame_log, get_rows
+from function.io.frame_saver import save_frame_log
 from function.io.metadata import save_trial_metadata
+from function.io.path_builder import build_trial_save_dir
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
 from function.phases.feedback import run_feedback
@@ -92,33 +94,33 @@ def main() -> None:
         return score.get(key, {}).get(domain, 0)
 
     for domain in DOMAINS:
-        # # ── Phase 1: competence observable, synergy infer (12 trials) ──────────
-        # for trial_i in range(P1_TRIALS):
-        #     char_order = p1_schedule[domain][trial_i]
-        #     stim_pair_id = f"{domain}_p1_t{trial_i:02d}"
-        #     frame_log = make_frame_log(
-        #         phase="phase_1",
-        #         trial_id=trial_i,
-        #         stim_pair_id=stim_pair_id,
-        #     )
-        #     run_gaussian_iti(win, global_clock, frame_log)
-        #     result = run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order)
+        # ── Phase 1: competence observable, synergy infer (12 trials) ──────────
+        for trial_i in range(P1_TRIALS):
+            char_order = p1_schedule[domain][trial_i]
+            stim_pair_id = f"{domain}_p1_t{trial_i:02d}"
+            frame_log = make_frame_log(
+                phase="phase_1",
+                trial_id=trial_i,
+                stim_pair_id=stim_pair_id,
+            )
+            run_gaussian_iti(win, global_clock, frame_log)
+            result = run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order)
 
-        #     fb_score = 0
-        #     if result:
-        #         fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-        #         run_feedback(win, global_clock, fb_score)
+            fb_score = 0
+            if result:
+                fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
+                run_feedback(win, global_clock, fb_score)
 
-        #     save_trial_metadata(
-        #         subject_id=subject_id,
-        #         phase="phase_1",
-        #         domain=domain,
-        #         trial_id=trial_i,
-        #         stim_pair_id=stim_pair_id,
-        #         char_order=char_order,
-        #         result=result,
-        #         feedback_score=fb_score,
-        #     )
+            save_trial_metadata(
+                subject_id=subject_id,
+                phase="phase_1",
+                domain=domain,
+                trial_id=trial_i,
+                stim_pair_id=stim_pair_id,
+                char_order=char_order,
+                result=result,
+                feedback_score=fb_score,
+            )
 
         # ── Phase 2: synergy observable, competence infer (18 trials) ──────────
         for trial_i in range(P2_TRIALS):
@@ -146,6 +148,10 @@ def main() -> None:
                 char_order=char_order,
                 result=result,
                 feedback_score=fb_score,
+            )
+            save_frame_log(
+                get_rows(frame_log),
+                build_trial_save_dir(subject_id, "phase_2", stim_pair_id),
             )
 
     win.close()

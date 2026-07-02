@@ -29,8 +29,9 @@ _KEY_TO_IDX: dict = {
     'left':  3,
 }
 
-_COLOR_IDLE     = '#0055ff'
-_COLOR_SELECTED = '#55aaff'  # lighter blue when selected
+_COLOR_IDLE      = '#0055ff'
+_COLOR_SELECTED  = "#515253"  # lighter blue when previewing
+_COLOR_CONFIRMED = '#ff8800'  # orange when confirmed by space bar
 
 
 class ArrowKeyboard:
@@ -65,6 +66,7 @@ class ArrowKeyboard:
             )
             for dx, dy, ori in _ARROW_DEFS
         ]
+        self._confirmed_idx: Optional[int] = None
 
     @property
     def valid_keys(self) -> List[str]:
@@ -75,8 +77,8 @@ class ArrowKeyboard:
             arrow.draw()
 
     def reset_colors(self) -> None:
-        for arrow in self.arrows:
-            arrow.fillColor = _COLOR_IDLE
+        for i, arrow in enumerate(self.arrows):
+            arrow.fillColor = _COLOR_CONFIRMED if i == self._confirmed_idx else _COLOR_IDLE
 
     def select(self, key: str, excluded_idx: Optional[int] = None) -> Optional[int]:
         """Highlight the arrow for *key* and return its index.
@@ -90,8 +92,9 @@ class ArrowKeyboard:
         return idx
 
     def set_excluded(self, excluded_idx: int) -> None:
-        """Dim one arrow to signal it is unavailable (Choice 2 lock-out)."""
-        self.arrows[excluded_idx].fillColor = '#555555'
+        """Mark the confirmed Choice 1 arrow orange and persist it through reset_colors()."""
+        self._confirmed_idx = excluded_idx
+        self.arrows[excluded_idx].fillColor = _COLOR_CONFIRMED
 
     def collect(
         self,

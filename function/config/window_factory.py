@@ -66,7 +66,9 @@ class VisualObjectFactory:
         self.animal_stims = {}
         self.border_stims = {}
         self.block_stims = {}
-        
+        self.overlay_stims = {}
+        self._locked_chars: set = set()
+
         self._create_ui_elements()
 
     def _create_ui_elements(self):
@@ -108,8 +110,20 @@ class VisualObjectFactory:
                 width=200,
                 height=200,
                 lineWidth=3,
-                lineColor='whit e',
+                lineColor='white',
                 fillColor=None,
+                units='pix'
+            )
+
+            # 파트 2용 어두운 반투명 오버레이 (선택 확정 시 이미지 위에 덮음)
+            self.overlay_stims[char_name] = visual.Rect(
+                win=self.win,
+                pos=info['pos'],
+                width=240,
+                height=240,
+                fillColor='black',
+                lineColor=None,
+                opacity=0.5,
                 units='pix'
             )
 
@@ -120,9 +134,17 @@ class VisualObjectFactory:
 
     def reset_ui_states(self):
         """매 Trial 시작 전 모든 테두리와 블록 색상을 초기 상태로 깨끗하게 청소합니다."""
+        self._locked_chars.clear()
         for char_name in self.char_list:
             self.border_stims[char_name].setLineColor('white')
             self.block_stims[char_name].setFillColor('white')
+
+    def set_animal_locked(self, char_name: str, locked: bool) -> None:
+        """Choice 1 확정 시 동물 이미지 위에 어두운 오버레이를 활성화/비활성화합니다."""
+        if locked:
+            self._locked_chars.add(char_name)
+        else:
+            self._locked_chars.discard(char_name)
 
     # Slot positions: index 0=up, 1=down, 2=right, 3=left  (matches ArrowKeyboard order)
     _SLOT_POSITIONS = [(0, 250), (0, -250), (250, 0), (-250, 0)]
@@ -138,6 +160,7 @@ class VisualObjectFactory:
             self.animal_stims[animal_name].setPos(pos)
             self.border_stims[animal_name].setPos(pos)
             self.block_stims[animal_name].setPos(pos)
+            self.overlay_stims[animal_name].setPos(pos)
         self.char_list = list(char_order)
 
     def draw_base_scene(self, phase_type='phase1'):
@@ -153,6 +176,10 @@ class VisualObjectFactory:
                 self.block_stims[char_name].draw()
 
             self.animal_stims[char_name].draw()
+
+            # 파트 2에서 확정된 동물은 어두운 오버레이로 덮어 선택 표시
+            if phase_type == 'phase2' and char_name in self._locked_chars:
+                self.overlay_stims[char_name].draw()
 
             # 파트 1(역량)일 때는 텍스처 위에 하이라이트 테두리를 덮어 그립니다
             if phase_type == 'phase1':
