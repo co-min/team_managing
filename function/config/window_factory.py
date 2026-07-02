@@ -43,25 +43,32 @@ from psychopy import visual
 
 class VisualObjectFactory:
     def __init__(self, win):
-        """
-        실험에 필요한 모든 시각적 객체(윈도우, 도메인 이미지, 동물 캐릭터, 키보드 포커스 UI)를 
-        생성하고 관리하는 팩토리 클래스입니다.
-        """
         self.win = win
-        
-        # 1. 캐릭터 정보 및 십자형(Cross) 배치 좌표 설정 (화면 중심 기준 픽셀 단위)
-        # 상(Duck), 하(Frog), 우(Panda), 좌(Rabbit)  — 화살표 방향과 일치
+
+        layout = self._compute_layout()
+        av, ah = layout['animal_v'], layout['animal_h']
+
+        # 상(Duck), 하(Frog), 우(Panda), 좌(Rabbit) — 화살표 방향과 일치
         self.char_info = {
-            'duck':   {'pos': (   0,  250), 'img': 'image/objectives/duck.png'},
-            'frog':   {'pos': (   0, -250), 'img': 'image/objectives/frog.png'},
-            'panda':  {'pos': ( 250,    0), 'img': 'image/objectives/panda.png'},
-            'rabbit': {'pos': (-250,    0), 'img': 'image/objectives/rabbit.png'}
+            'duck':   {'pos': (   0,  av), 'img': 'image/objectives/duck.png'},
+            'frog':   {'pos': (   0, -av), 'img': 'image/objectives/frog.png'},
+            'panda':  {'pos': ( ah,    0), 'img': 'image/objectives/panda.png'},
+            'rabbit': {'pos': (-ah,    0), 'img': 'image/objectives/rabbit.png'}
         }
-        
-        # 키보드 인덱스 매핑용 리스트 (순서 고정)
+
         self.char_list = ['duck', 'frog', 'panda', 'rabbit']
-        
-        # 2. 시각 컴포넌트 초기화
+
+        # Slot positions: index 0=up, 1=down, 2=right, 3=left
+        self._slot_positions = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
+
+        # Score block offsets (outer side of each animal, away from center)
+        ov = layout['outer_v']
+        self._slot_block_offsets = [(0, ov), (0, -ov), (0, ov), (0, ov)]
+        self._block_size  = layout['block_size']
+        self._animal_size = layout['animal_size']
+        self._domain_size = layout['domain_size']
+        self._domain_y    = layout['domain_y']
+
         self.domain_stim = None
         self.animal_stims = {}
         self.border_stims = {}
@@ -71,57 +78,92 @@ class VisualObjectFactory:
 
         self._create_ui_elements()
 
+    def _compute_layout(self) -> dict:
+        """win.size 기준으로 모든 레이아웃 수치를 비례 계산합니다."""
+        W, H = self.win.size
+        half_h = H // 2
+
+        # 도메인 이미지 (상단, 정사각형)
+        domain_size   = int(H * 0.155)
+        domain_y      = half_h - domain_size // 2 - 20
+        domain_bottom = domain_y - domain_size // 2
+
+        # 동물 이미지 크기 및 십자 배치 거리
+        animal_size = int(H * 0.148)
+        animal_v    = int(H * 0.180)   # 중심으로부터 상하 거리
+        animal_h    = int(W * 0.138)   # 중심으로부터 좌우 거리
+
+        # 상단 동물이 도메인 이미지 하단과 최소 25px 간격 유지
+        max_v    = domain_bottom - animal_size // 2 - 25
+        animal_v = min(animal_v, max_v)
+
+        # 스코어 블록 크기
+        block_h = int(H * 0.042)
+        block_w = animal_size + 20
+
+        # 스코어 블록: 동물 외곽(바깥쪽)에 배치, 도메인과 10px 이상 여백 유지
+        outer_v     = animal_size // 2 + 10 + block_h // 2
+        max_outer_v = domain_bottom - animal_v - block_h // 2 - 10
+        outer_v     = min(outer_v, max_outer_v)
+
+        return {
+            'domain_size': domain_size,
+            'domain_y':    domain_y,
+            'animal_size': animal_size,
+            'animal_v':    animal_v,
+            'animal_h':    animal_h,
+            'block_size':  (block_w, block_h),
+            'outer_v':     outer_v,
+        }
+
     def _create_ui_elements(self):
         """실험 시작 시 UI 요소들을 메모리에 고속 생성합니다."""
-        
-        # A. 상단 도메인 이미지 Stimulus 공간 확보 (main에서 경로 동적 업데이트)
+        ds = self._domain_size
         self.domain_stim = visual.ImageStim(
             win=self.win,
-            pos=(0, 540),
-            size=(250, 250)
+            pos=(0, self._domain_y),
+            size=(ds, ds)
         )
-        
-        # B. 4마리 동물 캐릭터 및 개별 테두리/블록 세트 생성
+
+        az = self._animal_size
+        bz = az + 16   # 테두리는 동물 이미지보다 16px 크게
         for char_name, info in self.char_info.items():
-            # 파트 2용 백그라운드 블록 (이미지 뒤에 배치되어 색상이 변하는 영역)
+            # 파트 2용 백그라운드 블록 (apply_layout에서 위치/크기 재설정됨)
             self.block_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
-                width=80,
-                height=80,
+                width=az, height=az,
                 fillColor='white',
                 lineColor=None,
                 opacity=0,
                 units='pix'
             )
-            
+
             # 기본 동물 이미지 캐릭터
             self.animal_stims[char_name] = visual.ImageStim(
                 win=self.win,
                 image=info['img'],
                 pos=info['pos'],
-                size=(180, 180),
+                size=(az, az),
                 units='pix'
             )
-            
-            # 파트 1용 하이라이트 테두리 (기본값은 투명 또는 흰색)
+
+            # 파트 1용 하이라이트 테두리
             self.border_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
-                width=200,
-                height=200,
+                width=bz, height=bz,
                 lineWidth=3,
                 lineColor='white',
                 fillColor=None,
                 units='pix'
             )
 
-            # 파트 2용 어두운 반투명 오버레이 (선택 확정 시 이미지 위에 덮음)
+            # 파트 2용 어두운 반투명 오버레이
             self.overlay_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
-                width=300,
-                height=300,
+                width=az, height=az,
                 fillColor='black',
                 lineColor=None,
                 opacity=0.5,
@@ -149,15 +191,6 @@ class VisualObjectFactory:
         else:
             self._locked_chars.discard(char_name)
 
-    # Slot positions: index 0=up, 1=down, 2=right, 3=left  (matches ArrowKeyboard order)
-    _SLOT_POSITIONS = [(0, 250), (0, -250), (250, 0), (-250, 0)]
-
-    # Score block offset from animal center, per slot (pix)
-    # up → block above | down → block below | right/left → block above the animal
-    # (placing right/left blocks to the side risks overlap with up/down animal images)
-    _SLOT_BLOCK_OFFSETS = [(0, 140), (0, -140), (0, 140), (0, 140)]
-    _BLOCK_SIZE = (180, 55)
-
     def apply_layout(self, char_order: list) -> None:
         """
         Rearrange which animal appears at each spatial slot for this trial.
@@ -165,15 +198,15 @@ class VisualObjectFactory:
         char_order : list of 4 animal names, e.g. ['rabbit', 'duck', 'panda', 'frog']
                      Index 0 = up-arrow slot, 1 = down, 2 = right, 3 = left.
         """
-        for slot_idx, (animal_name, pos) in enumerate(zip(char_order, self._SLOT_POSITIONS)):
+        for slot_idx, (animal_name, pos) in enumerate(zip(char_order, self._slot_positions)):
             self.animal_stims[animal_name].setPos(pos)
             self.border_stims[animal_name].setPos(pos)
             self.overlay_stims[animal_name].setPos(pos)
 
-            dx, dy = self._SLOT_BLOCK_OFFSETS[slot_idx]
+            dx, dy = self._slot_block_offsets[slot_idx]
             block_pos = (pos[0] + dx, pos[1] + dy)
             self.block_stims[animal_name].setPos(block_pos)
-            self.block_stims[animal_name].setSize(self._BLOCK_SIZE)
+            self.block_stims[animal_name].setSize(self._block_size)
 
         self.char_list = list(char_order)
 
@@ -191,8 +224,8 @@ class VisualObjectFactory:
 
             self.animal_stims[char_name].draw()
 
-            # 파트 2에서 확정된 동물은 어두운 오버레이로 덮어 선택 표시
-            if phase_type == 'phase2' and char_name in self._locked_chars:
+            # 확정된 동물은 어두운 오버레이로 덮어 선택 표시
+            if char_name in self._locked_chars:
                 self.overlay_stims[char_name].draw()
 
             # 파트 1(역량)일 때는 텍스처 위에 하이라이트 테두리를 덮어 그립니다

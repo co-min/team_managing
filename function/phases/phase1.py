@@ -1,37 +1,14 @@
 """
-Phase 1 – Competence Task (12 trials)
-
-Trial flow
-----------
-1. All 4 animals are shown with borders whose colour reflects each
-   animal's individual competence score for the current domain
-   (3 = green, 2 = yellow, 1 = red). Colours are static throughout
-   the trial.
-
-2. A 4-directional ArrowKeyboard is displayed at the bottom-centre.
-   Pressing an arrow key previews (highlights) the corresponding animal.
-   Space bar confirms the current preview as the choice.
-
-3. After Choice 1 is confirmed a light-blue locked indicator appears
-   around the chosen animal and the corresponding arrow is dimmed.
-   The same arrow-key + space-bar mechanic picks Choice 2
-   (locked animal excluded).
-
-4. Returns {'choice1': char_code, 'choice2': char_code} where
-   char_code in {'A', 'B', 'C', 'D'}, or None on timeout.
+Phase 1 – Competence Task
 
 Arrow → animal mapping
-----------------------
-  up    → duck   (   0, +180)
-  down  → frog   (   0, -180)
-  right → panda  (+180,    0)
-  left  → rabbit (-180,    0)
+
 """
 
 from psychopy import visual, event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME
+from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE
 from function.io.frame_logger import FrameRecorder
 from utils.arrow_keyboard import ArrowKeyboard
 from utils.event_utils import check_escape
@@ -40,8 +17,6 @@ from utils.labjack_trigger import (
     TRIG_P1_STIMULUS, TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
 )
 
-# Animal name -> char_ani code (matches the 'competence' dict in main.py)
-_CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
 
 # Competence score -> border colour
 _SCORE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
@@ -129,6 +104,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
+    factory.set_animal_locked(char_list[choice1_idx], True)
     rec.start_segment()
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
@@ -166,9 +142,9 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
             rec.log_final(win, {'response': True})
             break
 
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
-            return None
+        # if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+        #     rec.log_final(win, {'response': False})
+        #     return None
 
         factory.draw_base_scene(phase_type='phase1')
         kb.draw()

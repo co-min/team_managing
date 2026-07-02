@@ -1,39 +1,15 @@
 """
-Phase 2 – Synergy Task (18 trials)
+Phase 2 – Synergy Task 
 
 Trial flow
 ----------
-Choice 1
-  Block backgrounds stay white.
-  A 4-directional ArrowKeyboard is displayed at the bottom-centre.
-  Pressing an arrow key previews the corresponding animal: the other three
-  blocks show their synergy score with that candidate
-  (1 = green, 0 = yellow, -1 = red).  The candidate's own block stays white.
-  A different arrow key switches the preview.
-  Space bar confirms the current preview as Choice 1.
 
-Choice 2
-  The confirmed Choice 1 block turns blue and its arrow is dimmed.
-  The remaining three animals' blocks keep the synergy scores shown during
-  the preview.  The same arrow-key + space-bar mechanic picks Choice 2:
-  pressing an arrow key previews the candidate; space bar confirms it
-  (Choice 1 arrow excluded).
-
-Returns {'choice1': char_code, 'choice2': char_code, 'rt1': float, 'rt2': float}
-where char_code in {'A', 'B', 'C', 'D'}, or None on timeout.
-
-Arrow → slot mapping (positions are randomised per trial via char_order)
--------------------------------------------------------------------------
-  up    → slot index 0
-  down  → slot index 1
-  right → slot index 2
-  left  → slot index 3
 """
 
 from psychopy import event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME
+from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
 from function.io.frame_logger import FrameRecorder
 from utils.arrow_keyboard import ArrowKeyboard
 from utils.event_utils import check_escape
@@ -42,11 +18,6 @@ from utils.labjack_trigger import (
     TRIG_P2_STIMULUS, TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
 )
 
-# Animal name -> char_ani code (matches the 'synergy' dict keys in main.py)
-_CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
-
-# Synergy score -> block fill colour
-_SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
 
 # Vertical offset (px) below the animal grid where the ArrowKeyboard sits
 _KB_Y = 0
@@ -90,7 +61,7 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
                 idx = kb.select(pressed, excluded_idx=excluded_idx)
                 if idx is not None:
                     preview_idx = idx
-                    factory.block_stims[char_list[idx]].setFillColor('white')
+                    factory.block_stims[char_list[idx]].opacity = 0
                     _apply_synergy_colors(factory, char_list, idx, _CHAR_CODE[char_list[idx]], synergy)
 
         if confirmed_code is not None:
@@ -101,9 +72,9 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
             rec.log_final(win, {'response': True})
             return confirmed_idx, confirmed_code, confirmed_rt
 
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
-            return None, None, None
+        # if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+        #     rec.log_final(win, {'response': False})
+        #     return None, None, None
 
         factory.draw_base_scene(phase_type='phase2')
         kb.draw()
