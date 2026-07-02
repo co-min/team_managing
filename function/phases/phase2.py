@@ -60,6 +60,7 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy):
         other_code = _CHAR_CODE[char_name]
         score = synergy.get(tuple(sorted([pivot_code, other_code])), 0)
         factory.block_stims[char_name].setFillColor(_SYNERGY_COLOR.get(score, 'white'))
+        factory.block_stims[char_name].opacity = 1
 
 
 def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,

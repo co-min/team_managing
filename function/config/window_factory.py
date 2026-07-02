@@ -87,10 +87,11 @@ class VisualObjectFactory:
             self.block_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
-                width=240,
-                height=240,
+                width=80,
+                height=80,
                 fillColor='white',
                 lineColor=None,
+                opacity=0,
                 units='pix'
             )
             
@@ -119,8 +120,8 @@ class VisualObjectFactory:
             self.overlay_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
-                width=240,
-                height=240,
+                width=300,
+                height=300,
                 fillColor='black',
                 lineColor=None,
                 opacity=0.5,
@@ -139,6 +140,7 @@ class VisualObjectFactory:
             self.border_stims[char_name].setLineColor('white')
             self.border_stims[char_name].opacity = 0
             self.block_stims[char_name].setFillColor('white')
+            self.block_stims[char_name].opacity = 0
 
     def set_animal_locked(self, char_name: str, locked: bool) -> None:
         """Choice 1 확정 시 동물 이미지 위에 어두운 오버레이를 활성화/비활성화합니다."""
@@ -150,6 +152,12 @@ class VisualObjectFactory:
     # Slot positions: index 0=up, 1=down, 2=right, 3=left  (matches ArrowKeyboard order)
     _SLOT_POSITIONS = [(0, 250), (0, -250), (250, 0), (-250, 0)]
 
+    # Score block offset from animal center, per slot (pix)
+    # up → block above | down → block below | right/left → block above the animal
+    # (placing right/left blocks to the side risks overlap with up/down animal images)
+    _SLOT_BLOCK_OFFSETS = [(0, 140), (0, -140), (0, 140), (0, 140)]
+    _BLOCK_SIZE = (180, 55)
+
     def apply_layout(self, char_order: list) -> None:
         """
         Rearrange which animal appears at each spatial slot for this trial.
@@ -157,11 +165,16 @@ class VisualObjectFactory:
         char_order : list of 4 animal names, e.g. ['rabbit', 'duck', 'panda', 'frog']
                      Index 0 = up-arrow slot, 1 = down, 2 = right, 3 = left.
         """
-        for animal_name, pos in zip(char_order, self._SLOT_POSITIONS):
+        for slot_idx, (animal_name, pos) in enumerate(zip(char_order, self._SLOT_POSITIONS)):
             self.animal_stims[animal_name].setPos(pos)
             self.border_stims[animal_name].setPos(pos)
-            self.block_stims[animal_name].setPos(pos)
             self.overlay_stims[animal_name].setPos(pos)
+
+            dx, dy = self._SLOT_BLOCK_OFFSETS[slot_idx]
+            block_pos = (pos[0] + dx, pos[1] + dy)
+            self.block_stims[animal_name].setPos(block_pos)
+            self.block_stims[animal_name].setSize(self._BLOCK_SIZE)
+
         self.char_list = list(char_order)
 
     def draw_base_scene(self, phase_type='phase1'):
