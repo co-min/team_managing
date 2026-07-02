@@ -3,3 +3,4 @@ data__pycache__/
 *.py[cod]
 __pycache__/
 *.pyc
+data

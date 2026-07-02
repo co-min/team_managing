@@ -15,7 +15,8 @@ Choice 1
 Choice 2
   The confirmed Choice 1 block turns blue and its arrow is dimmed.
   The remaining three animals' blocks keep the synergy scores shown during
-  the preview.  The same arrow-key mechanic picks Choice 2
+  the preview.  The same arrow-key + space-bar mechanic picks Choice 2:
+  pressing an arrow key previews the candidate; space bar confirms it
   (Choice 1 arrow excluded).
 
 Returns {'choice1': char_code, 'choice2': char_code, 'rt1': float, 'rt2': float}
@@ -143,22 +144,29 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
     rec.start_segment()
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
+    preview2_idx = None
     rt2 = None
     clock = core.Clock()
     choice2_code = None
 
     while choice2_code is None:
         check_escape(win)
-        for key, t in event.getKeys(keyList=kb.valid_keys, timeStamped=clock):
-            idx = kb.select(key, excluded_idx=choice1_idx)
-            if idx is not None:
-                choice2_code = _CHAR_CODE[char_list[idx]]
-                rt2 = t
+        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+            if pressed == 'space':
+                if preview2_idx is not None:
+                    choice2_code = _CHAR_CODE[char_list[preview2_idx]]
+                    rt2 = t
+            else:
+                kb.reset_colors()
+                idx = kb.select(pressed, excluded_idx=choice1_idx)
+                if idx is not None:
+                    preview2_idx = idx
 
         if choice2_code is not None:
             factory.draw_base_scene(phase_type='phase2')
             kb.draw()
             win.flip()
+            core.wait(0.15)
             rec.log_final(win, {'response': True})
             break
 
@@ -168,7 +176,6 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
 
         factory.draw_base_scene(phase_type='phase2')
         kb.draw()
-        # core.wait(0.15)
         rec.flip_and_log(win)
 
     return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

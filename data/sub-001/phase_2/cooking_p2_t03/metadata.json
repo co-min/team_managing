@@ -10,13 +10,13 @@
     "right": "rabbit",
     "left": "duck"
   },
-  "response_made": false,
-  "choice1_code": null,
-  "choice2_code": null,
-  "choice1_animal": null,
-  "choice2_animal": null,
-  "rt_choice1": null,
-  "rt_choice2": null,
-  "feedback_score": null,
-  "timestamp": "2026-07-02T13:22:08"
+  "response_made": true,
+  "choice1_code": "A",
+  "choice2_code": "C",
+  "choice1_animal": "duck",
+  "choice2_animal": "panda",
+  "rt_choice1": 7.9925,
+  "rt_choice2": 3.0161,
+  "feedback_score": 0,
+  "timestamp": "2026-07-02T14:35:42"
 }

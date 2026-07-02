@@ -59,3 +59,13 @@ P2_TRIALS = 18
 
 # --- Feed back ---
 FB_TIME = 2
+
+
+# Animal name -> char_ani code (matches the 'synergy' dict keys in main.py)
+CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
+
+# Synergy score -> block fill colour
+SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
+
+# Colour for the locked Choice 1 block
+LOCKED_COLOR = '#4488ff'

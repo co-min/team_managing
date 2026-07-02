@@ -11,12 +11,12 @@
     "left": "rabbit"
   },
   "response_made": true,
-  "choice1_code": "D",
-  "choice2_code": "A",
-  "choice1_animal": "rabbit",
-  "choice2_animal": "duck",
-  "rt_choice1": 4.2389,
-  "rt_choice2": 0.8806,
+  "choice1_code": "A",
+  "choice2_code": "D",
+  "choice1_animal": "duck",
+  "choice2_animal": "rabbit",
+  "rt_choice1": 2.6263,
+  "rt_choice2": 5.9472,
   "feedback_score": -1,
-  "timestamp": "2026-07-02T13:21:34"
+  "timestamp": "2026-07-02T14:35:05"
 }
