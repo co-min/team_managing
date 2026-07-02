@@ -1,0 +1,5 @@
+id, char_ani, animal, img_file, cooking, repairing, tennis
+1,A,duck,duck.png,1,2,3
+2,B,frog,frog.png,3,2,1
+3,C,panda,panda.png,2,3,1
+4,D,rabbit,rabbit.png,2,2,2

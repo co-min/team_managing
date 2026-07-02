@@ -1,0 +1,22 @@
+{
+  "subject_id": "001",
+  "phase": "phase_1",
+  "domain": "cooking",
+  "trial_id": 9,
+  "stim_pair_id": "cooking_p1_t09",
+  "trial_layout": {
+    "up": "rabbit",
+    "down": "panda",
+    "right": "duck",
+    "left": "frog"
+  },
+  "response_made": true,
+  "choice1_code": "B",
+  "choice2_code": "A",
+  "choice1_animal": "frog",
+  "choice2_animal": "duck",
+  "rt_choice1": 3.1842,
+  "rt_choice2": 0.1834,
+  "feedback_score": 2,
+  "timestamp": "2026-07-02T13:17:48"
+}

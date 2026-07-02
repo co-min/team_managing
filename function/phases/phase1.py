@@ -1,0 +1,146 @@
+"""
+Phase 1 – Competence Task (12 trials)
+
+Trial flow
+----------
+1. All 4 animals are shown with borders whose colour reflects each
+   animal's individual competence score for the current domain
+   (3 = green, 2 = yellow, 1 = red). Colours are static throughout
+   the trial.
+
+2. A 4-directional ArrowKeyboard is displayed at the bottom-centre.
+   Pressing an arrow key directly selects the corresponding animal
+   (up=duck, down=frog, right=panda, left=rabbit).
+
+3. After Choice 1 is confirmed a light-blue locked indicator appears
+   around the chosen animal and the corresponding arrow is dimmed.
+   The same arrow-key mechanic picks Choice 2 (locked animal excluded).
+
+4. Returns {'choice1': char_code, 'choice2': char_code} where
+   char_code in {'A', 'B', 'C', 'D'}, or None on timeout.
+
+Arrow → animal mapping
+----------------------
+  up    → duck   (   0, +180)
+  down  → frog   (   0, -180)
+  right → panda  (+180,    0)
+  left  → rabbit (-180,    0)
+"""
+
+from psychopy import visual, event, core
+
+from function.config.window_factory import get_shared_factory
+from function.config.settings import MAX_RESPONSE_TIME
+from function.io.frame_logger import FrameRecorder
+from utils.arrow_keyboard import ArrowKeyboard
+from utils.event_utils import check_escape
+
+# Animal name -> char_ani code (matches the 'competence' dict in main.py)
+_CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
+
+# Competence score -> border colour
+_SCORE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
+
+_LOCKED_SIZE = 212   # px – light-blue outline drawn around the locked Choice 1 animal
+
+# ArrowKeyboard sits at the centre of the cross, between the 4 animals
+_KB_Y = 0
+
+
+def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order):
+    """
+    Run one Phase 1 trial.
+
+    Parameters
+    ----------
+    win          : psychopy.visual.Window
+    global_clock : psychopy.core.Clock  (experiment-wide)
+    frame_log    : FrameLog dict (mutated in-place via FrameRecorder)
+    competence   : dict  {char_code: {domain: score}}  from main._load_all_data()
+    domain       : str   'cooking' | 'repairing' | 'tennis'
+    char_order   : list  [up_animal, down_animal, right_animal, left_animal]
+
+    Returns
+    -------
+    dict  {'choice1': char_code, 'choice2': char_code, 'rt1': float, 'rt2': float}
+    or None on timeout
+    """
+    factory = get_shared_factory(win)
+    factory.apply_layout(char_order)
+    char_list = factory.char_list
+
+    # Reset and colour borders by individual competence scores
+    factory.update_domain(domain)
+    factory.reset_ui_states()
+    for char_name in char_list:
+        score = competence[_CHAR_CODE[char_name]][domain]
+        factory.border_stims[char_name].lineColor = _SCORE_COLOR.get(score, 'white')
+
+    kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
+    rec = FrameRecorder(frame_log, global_clock)
+
+    # ── Choice 1 ──────────────────────────────────────────────────────────────
+    kb.reset_colors()
+    choice1_idx = choice1_code = None
+    rt1 = None
+    clock = core.Clock()
+
+    while choice1_code is None:
+        check_escape(win)
+        for key, t in event.getKeys(keyList=kb.valid_keys, timeStamped=clock):
+            idx = kb.select(key)
+            if idx is not None:
+                choice1_idx  = idx
+                choice1_code = _CHAR_CODE[char_list[idx]]
+                rt1 = t
+
+        if choice1_code is not None:
+            factory.draw_base_scene(phase_type='phase1')
+            kb.draw()
+            win.flip()
+            core.wait(0.15)
+            rec.log_final(win, {'response': True})
+            break
+
+        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+            rec.log_final(win, {'response': False})
+            return None
+
+        factory.draw_base_scene(phase_type='phase1')
+        kb.draw()
+        rec.flip_and_log(win)
+
+
+    # ── Choice 2 ──────────────────────────────────────────────────────────────
+    rec.start_segment()
+    kb.reset_colors()
+    kb.set_excluded(choice1_idx)
+    rt2 = None
+    clock = core.Clock()
+    choice2_code = None
+
+    while choice2_code is None:
+        check_escape(win)
+        for key, t in event.getKeys(keyList=kb.valid_keys, timeStamped=clock):
+            idx = kb.select(key, excluded_idx=choice1_idx)
+            if idx is not None:
+                choice2_code = _CHAR_CODE[char_list[idx]]
+                rt2 = t
+
+        if choice2_code is not None:
+            factory.draw_base_scene(phase_type='phase1')
+            kb.draw()
+            win.flip()
+            core.wait(0.15)
+            rec.log_final(win, {'response': True})
+            break
+
+        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+            rec.log_final(win, {'response': False})
+            return None
+
+        factory.draw_base_scene(phase_type='phase1')
+        kb.draw()
+        rec.flip_and_log(win)
+
+    return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

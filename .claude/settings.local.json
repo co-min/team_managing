@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\niobi\\\\OneDrive\\\\Desktop\\\\Project_ylab_2026\\\\synergy_compositionality\\\\syn_0630\" -Recurse -Force)",
+      "Bash(Format-Table -AutoSize Name, FullName, PSIsContainer)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\niobi\\\\OneDrive\\\\Desktop\\\\Project_ylab_2026\\\\synergy_compositionality\\\\syn_0630\" -Recurse -Force | Sort-Object FullName | Format-Table -AutoSize Name, @{Name=\"Path\";Expression={$_.FullName}}, @{Name=\"IsDir\";Expression={$_.PSIsContainer}})",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\niobi\\\\OneDrive\\\\Desktop\\\\Project_ylab_2026\\\\synergy_compositionality\\\\syn_0630\" -Exclude \".venv\" -Recurse -File | Where-Object {$_.Extension -in @\\('.py', '.csv', '.json', '.txt', '.md', '.yaml', '.yml', '.gitignore'\\)} | Sort-Object FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\niobi\\\\OneDrive\\\\Desktop\\\\Project_ylab_2026\\\\synergy_compositionality\\\\syn_0630\" -Recurse)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\niobi\\\\OneDrive\\\\Desktop\\\\Project_ylab_2026\\\\synergy_compositionality\\\\syn_0630\" -Recurse -Force | Select-Object FullName | ForEach-Object { $_.FullName })",
+      "PowerShell(python --version)"
+    ]
+  }
+}
