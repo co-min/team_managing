@@ -137,6 +137,7 @@ class VisualObjectFactory:
         self._locked_chars.clear()
         for char_name in self.char_list:
             self.border_stims[char_name].setLineColor('white')
+            self.border_stims[char_name].opacity = 0
             self.block_stims[char_name].setFillColor('white')
 
     def set_animal_locked(self, char_name: str, locked: bool) -> None:

@@ -30,20 +30,13 @@ TRIG_RESET            = 0
 # check trial
 # =========================================
 
-TRIG_F_CHECK_START      = 10
-TRIG_F_CHECK_RESPOND    = 11
-TRIG_G_CHECK_START      = 12
-TRIG_G_CHECK_RESPOND    = 13
-TRIG_H_CHECK_START      = 14
-TRIG_H_CHECK_RESPOND    = 15
+
 
 
 # =========================================
 # main belief trial
 # =========================================
 
-TRIG_B_START          = 20
-TRIG_B_RESPOND        = 21
 
 
 
@@ -51,14 +44,7 @@ TRIG_B_RESPOND        = 21
 # stimulus presentation
 # =========================================
 
-TRIG_FOOD_SHOW        = 30
-TRIG_FOOD_SHOW_R      = 31
 
-TRIG_GENE_SHOW        = 32
-TRIG_GENE_SHOW_R      = 33
-
-TRIG_HABITAT_SHOW     = 34
-TRIG_HABITAT_SHOW_R   = 35
 
 # =========================================
 # trial boundary

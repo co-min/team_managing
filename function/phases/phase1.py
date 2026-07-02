@@ -100,6 +100,9 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                 idx = kb.select(pressed)
                 if idx is not None:
                     preview_idx = idx
+                    for name in char_list:
+                        factory.border_stims[name].opacity = 0
+                    factory.border_stims[char_list[idx]].opacity = 1
 
         if choice1_code is not None:
             factory.draw_base_scene(phase_type='phase1')
@@ -122,6 +125,8 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     rec.start_segment()
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
+    for name in char_list:
+        factory.border_stims[name].opacity = 0
     preview2_idx = None
     rt2 = None
     clock = core.Clock()
@@ -139,6 +144,9 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                 idx = kb.select(pressed, excluded_idx=choice1_idx)
                 if idx is not None:
                     preview2_idx = idx
+                    for name in char_list:
+                        factory.border_stims[name].opacity = 0
+                    factory.border_stims[char_list[idx]].opacity = 1
 
         if choice2_code is not None:
             factory.draw_base_scene(phase_type='phase1')

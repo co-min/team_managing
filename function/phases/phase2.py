@@ -44,9 +44,62 @@ _CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
 # Synergy score -> block fill colour
 _SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
 
-
 # Vertical offset (px) below the animal grid where the ArrowKeyboard sits
 _KB_Y = 0
+
+
+def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy):
+    """Color every non-pivot block by its synergy score with the pivot animal."""
+    for i, char_name in enumerate(char_list):
+        if i == pivot_idx:
+            continue
+        other_code = _CHAR_CODE[char_name]
+        score = synergy.get(tuple(sorted([pivot_code, other_code])), 0)
+        factory.block_stims[char_name].setFillColor(_SYNERGY_COLOR.get(score, 'white'))
+
+
+def _run_choice_loop(win, factory, kb, rec, char_list, synergy, excluded_idx=None):
+    """
+    Arrow-key preview + space-to-confirm loop.
+
+    Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
+    """
+    clock = core.Clock()
+    preview_idx = None
+
+    while True:
+        check_escape(win)
+        confirmed_idx = confirmed_code = confirmed_rt = None
+
+        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+            if pressed == 'space':
+                if preview_idx is not None:
+                    confirmed_idx  = preview_idx
+                    confirmed_code = _CHAR_CODE[char_list[preview_idx]]
+                    confirmed_rt   = t
+            else:
+                kb.reset_colors()
+                idx = kb.select(pressed, excluded_idx=excluded_idx)
+                if idx is not None:
+                    preview_idx = idx
+                    factory.block_stims[char_list[idx]].setFillColor('white')
+                    _apply_synergy_colors(factory, char_list, idx, _CHAR_CODE[char_list[idx]], synergy)
+
+        if confirmed_code is not None:
+            factory.draw_base_scene(phase_type='phase2')
+            kb.draw()
+            win.flip()
+            core.wait(0.15)
+            rec.log_final(win, {'response': True})
+            return confirmed_idx, confirmed_code, confirmed_rt
+
+        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+            rec.log_final(win, {'response': False})
+            return None, None, None
+
+        factory.draw_base_scene(phase_type='phase2')
+        kb.draw()
+        rec.flip_and_log(win)
 
 
 def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
@@ -72,119 +125,31 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order):
     char_list = factory.char_list
 
     factory.update_domain(domain)
-    factory.reset_ui_states()              # all block fills -> white
+    factory.reset_ui_states()
 
     kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
     rec = FrameRecorder(frame_log, global_clock)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
-    choice1_idx  = choice1_code = None
-    preview_idx  = None
-    preview_code = None
-    rt1 = None
-    clock = core.Clock()
+    choice1_idx, choice1_code, rt1 = _run_choice_loop(
+        win, factory, kb, rec, char_list, synergy
+    )
+    if choice1_code is None:
+        return None
 
-    while choice1_code is None:
-        check_escape(win)
-        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
-            if pressed == 'space':
-                if preview_idx is not None:
-                    choice1_idx  = preview_idx
-                    choice1_code = _CHAR_CODE[char_list[preview_idx]]
-                    rt1 = t
-            else:
-                kb.reset_colors()
-                idx = kb.select(pressed)
-                if idx is not None:
-                    preview_idx  = idx
-                    preview_code = _CHAR_CODE[char_list[idx]]
-                    for i, char_name in enumerate(char_list):
-                        if i == idx:
-                            factory.block_stims[char_name].setFillColor('white')
-                        else:
-                            code_other = _CHAR_CODE[char_name]
-                            skey  = tuple(sorted([preview_code, code_other]))
-                            score = synergy.get(skey, 0)
-                            factory.block_stims[char_name].setFillColor(
-                                _SYNERGY_COLOR.get(score, 'white')
-                            )
-
-        if choice1_code is not None:
-            factory.draw_base_scene(phase_type='phase2')
-            kb.draw()
-            win.flip()
-            core.wait(0.15)
-            rec.log_final(win, {'response': True})
-            break
-
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
-            return None
-
-        factory.draw_base_scene(phase_type='phase2')
-        kb.draw()
-        rec.flip_and_log(win)
-
-    # Darken the locked animal's image with a semi-transparent overlay
+    # Lock Choice 1; seed synergy colours for Choice 2 resting state
     factory.set_animal_locked(char_list[choice1_idx], True)
-
-    # Set synergy-based block colours for the remaining three animals
-    for i, char_name in enumerate(char_list):
-        if i == choice1_idx:
-            continue
-        code  = _CHAR_CODE[char_name]
-        key   = tuple(sorted([choice1_code, code]))
-        score = synergy.get(key, 0)
-        factory.block_stims[char_name].setFillColor(_SYNERGY_COLOR.get(score, 'white'))
+    _apply_synergy_colors(factory, char_list, choice1_idx, choice1_code, synergy)
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
     rec.start_segment()
     kb.reset_colors()
     kb.set_excluded(choice1_idx)
-    preview2_idx = None
-    rt2 = None
-    clock = core.Clock()
-    choice2_code = None
-
-    while choice2_code is None:
-        check_escape(win)
-        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
-            if pressed == 'space':
-                if preview2_idx is not None:
-                    choice2_code = _CHAR_CODE[char_list[preview2_idx]]
-                    rt2 = t
-            else:
-                kb.reset_colors()
-                idx = kb.select(pressed, excluded_idx=choice1_idx)
-                if idx is not None:
-                    preview2_idx = idx
-                    preview2_code = _CHAR_CODE[char_list[idx]]
-                    for i, char_name in enumerate(char_list):
-                        if i == idx:
-                            factory.block_stims[char_name].setFillColor('white')
-                        else:
-                            code_other = _CHAR_CODE[char_name]
-                            skey  = tuple(sorted([preview2_code, code_other]))
-                            score = synergy.get(skey, 0)
-                            factory.block_stims[char_name].setFillColor(
-                                _SYNERGY_COLOR.get(score, 'white')
-                            )
-
-        if choice2_code is not None:
-            factory.draw_base_scene(phase_type='phase2')
-            kb.draw()
-            win.flip()
-            core.wait(0.15)
-            rec.log_final(win, {'response': True})
-            break
-
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
-            return None
-
-        factory.draw_base_scene(phase_type='phase2')
-        kb.draw()
-        rec.flip_and_log(win)
+    _, choice2_code, rt2 = _run_choice_loop(
+        win, factory, kb, rec, char_list, synergy, excluded_idx=choice1_idx
+    )
+    if choice2_code is None:
+        return None
 
     return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

@@ -20,7 +20,7 @@ _CODE_TO_ANIMAL: Dict[str, str] = {
 _SLOT_NAMES: List[str] = ['up', 'down', 'right', 'left']
 
 
-def save_trial_metadata(
+def build_trial_record(
     subject_id: str,
     phase: str,
     domain: str,
@@ -29,34 +29,13 @@ def save_trial_metadata(
     char_order: List[str],
     result: Optional[Dict[str, Any]],
     feedback_score: int = 0,
-) -> Path:
-    """
-    Save one trial's behavioral data to JSON.
-
-    Parameters
-    ----------
-    subject_id    : e.g. "001"
-    phase         : "phase_1" | "phase_2"
-    domain        : "cooking" | "repairing" | "tennis"
-    trial_id      : 0-based trial index within this domain/phase
-    stim_pair_id  : e.g. "cooking_p1_t00"
-    char_order    : [up_animal, down_animal, right_animal, left_animal]
-    result        : return value from run_phase*_trial, or None on timeout
-    feedback_score: score shown on the feedback screen
-
-    Returns
-    -------
-    Path to the saved JSON file
-    """
-    save_dir = ensure_trial_save_dir(subject_id, phase, stim_pair_id)
-
+) -> Dict[str, Any]:
+    """Build and return the trial metadata dict (does not write to disk)."""
     layout = {slot: animal for slot, animal in zip(_SLOT_NAMES, char_order)}
-
     responded = result is not None
     c1 = result['choice1'] if responded else None
     c2 = result['choice2'] if responded else None
-
-    record = {
+    return {
         "subject_id":     subject_id,
         "phase":          phase,
         "domain":         domain,
@@ -74,8 +53,30 @@ def save_trial_metadata(
         "timestamp":      datetime.now().isoformat(timespec='seconds'),
     }
 
+
+def save_trial_metadata(
+    subject_id: str,
+    phase: str,
+    domain: str,
+    trial_id: int,
+    stim_pair_id: str,
+    char_order: List[str],
+    result: Optional[Dict[str, Any]],
+    feedback_score: int = 0,
+) -> tuple:
+    """
+    Save one trial's behavioral data to JSON.
+
+    Returns
+    -------
+    (Path, record) — path of the saved JSON and the record dict.
+    """
+    record = build_trial_record(
+        subject_id, phase, domain, trial_id, stim_pair_id,
+        char_order, result, feedback_score,
+    )
+    save_dir = ensure_trial_save_dir(subject_id, phase, stim_pair_id)
     out_path = save_dir / "metadata.json"
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
-
-    return out_path
+    return out_path, record

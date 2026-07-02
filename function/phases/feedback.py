@@ -1,7 +1,7 @@
 # function/phases/feedback.py
 """
 Feedback gauge — displays the target score (-3 … +3) instantly 
-and holds for FB_TIME seconds.
+and holds for FB_TIME seconds with text intuition.
 
 Gauge layout (viewed head-on):
   -3 at lower-left  (~225° standard math)
@@ -13,12 +13,9 @@ PsychoPy needle orientation (clockwise from "up"):
 """
 
 import math
-
 from psychopy import visual, core
-
 from function.config.settings import FB_TIME
 from utils.event_utils import check_escape
-
 
 _GAUGE_RADIUS = 160
 _NEEDLE_LEN   = 140
@@ -29,6 +26,20 @@ _NEEDLE_COLOR = '#FF4444'
 def _score_to_ori(score: float) -> float:
     """Map score (-3..+3) to PsychoPy clockwise-from-up degrees."""
     return (score / 3.0) * 135.0
+
+
+def _get_feedback_details(score: float) -> tuple[str, str]:
+    """점수 구간에 따른 직관적인 멘트와 색상을 반환합니다."""
+    if score >= 3.0:
+        return "최고예요!", "#4CAF50"       # 진한 초록
+    elif score >= 1:
+        return "잘했어요!", "#8BC34A"       # 연두색
+    elif score >= -0.5:
+        return "나쁘지 않아요!", "#FFEB3B"   # 노란색
+    elif score >= -2.0:
+        return "아쉬워요..", "#FF9800"      # 주황색
+    else:
+        return "조금 더 힘내세요!", "#F44336"  # 빨간색
 
 
 def _build_gauge(win: visual.Window) -> list:
@@ -75,11 +86,15 @@ def run_feedback(
     score: float,
 ) -> None:
     """
-    Display the gauge with the needle pointing directly at *score* for FB_TIME seconds (no animation).
+    Display the gauge with the needle pointing directly at *score* along with intuitive text feedback for FB_TIME seconds.
     """
     gauge_stims = _build_gauge(win)
     target_ori  = _score_to_ori(score)
 
+    # 점수에 따른 멘트와 색상 가져오기
+    feedback_text, text_color = _get_feedback_details(score)
+
+    # 바늘 설정
     needle = visual.Line(
         win,
         start=(0, 0),
@@ -87,9 +102,19 @@ def run_feedback(
         lineColor=_NEEDLE_COLOR,
         lineWidth=5,
     )
-    
-    # 처음부터 바늘의 각도를 목표 점수에 맞게 고정합니다.
     needle.ori = target_ori
+
+    # 피드백 텍스트 자극(TextStim) 설정
+    # 위치를 (0, 260)으로 변경하여 게이지와 '0' 눈금보다 위쪽에 배치합니다.
+    text_stim = visual.TextStim(
+        win,
+        text=feedback_text,
+        pos=(0, 260),     # <--- 이 부분이 수정되었습니다 (위쪽 배치)
+        color=text_color,
+        height=28,       
+        bold=True,
+        wrapWidth=400    
+    )
 
     clock = core.Clock()
     
@@ -98,5 +123,6 @@ def run_feedback(
         for stim in gauge_stims:
             stim.draw()
         needle.draw()
+        text_stim.draw() # 피드백 텍스트 그리기
         win.flip()
         check_escape(win)
