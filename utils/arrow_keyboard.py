@@ -30,8 +30,8 @@ _KEY_TO_IDX: dict = {
 }
 
 _COLOR_IDLE      = '#0055ff'
-_COLOR_SELECTED  = "#515253"  # lighter blue when previewing
-_COLOR_CONFIRMED = '#ff8800'  # orange when confirmed by space bar
+_COLOR_SELECTED  = '#ff8800'
+_COLOR_CONFIRMED = '#ff8800'
 
 
 class ArrowKeyboard:

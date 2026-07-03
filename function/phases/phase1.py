@@ -142,9 +142,9 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
             rec.log_final(win, {'response': True})
             break
 
-        # if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-        #     rec.log_final(win, {'response': False})
-        #     return None
+        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+            rec.log_final(win, {'response': False})
+            return None
 
         factory.draw_base_scene(phase_type='phase1')
         kb.draw()
