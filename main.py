@@ -96,7 +96,9 @@ def main() -> None:
         key = tuple(sorted([c1, c2]))
         return score.get(key, {}).get(domain, 0)
 
-    for domain in DOMAINS:
+    cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
+
+    for domain in DOMAINS[1:2]:
         # ── Phase 1: competence observable, synergy infer (12 trials) ──────────
         for trial_i in range(P1_TRIALS):
             char_order = p1_schedule[domain][trial_i]
@@ -112,7 +114,10 @@ def main() -> None:
             fb_score = 0
             if result:
                 fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                run_feedback(win, global_clock, fb_score, handle, TRIG_P1_FEEDBACK)
+                cumul[domain]['phase_1'] += int(round(fb_score)) + 4
+                run_feedback(win, fb_score, domain,
+                             cumulative_score=cumul[domain]['phase_1'],
+                             handle=handle, trig_code=TRIG_P1_FEEDBACK)
 
             _, record = save_trial_metadata(
                 subject_id=subject_id,
@@ -147,7 +152,10 @@ def main() -> None:
             fb_score = 0
             if result:
                 fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                run_feedback(win, global_clock, fb_score, handle, TRIG_P2_FEEDBACK)
+                cumul[domain]['phase_2'] += int(round(fb_score)) + 4
+                run_feedback(win, fb_score, domain,
+                             cumulative_score=cumul[domain]['phase_2'],
+                             handle=handle, trig_code=TRIG_P2_FEEDBACK)
 
             _, record = save_trial_metadata(
                 subject_id=subject_id,

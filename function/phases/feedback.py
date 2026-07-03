@@ -1,135 +1,144 @@
 # function/phases/feedback.py
 """
-Feedback gauge — displays the target score (-3 … +3) instantly 
-and holds for FB_TIME seconds with text intuition.
+Feedback phase — domain-specific score display with monkey narrator.
 
-Gauge layout (viewed head-on):
-  -3 at lower-left  (~225° standard math)
-   0 at top         ( 90° standard math)
-  +3 at lower-right (~-45° / 315° standard math)
+  repairing : 7-segment cleanliness bar  (stage 1=dirty → 7=clean)
+  tennis    : scoreboard text            (3:0 loss → 0:3 win)
+  cooking   : taste-label text
 
-PsychoPy needle orientation (clockwise from "up"):
-  ori = (score / 3) * 135
+Score mapping:  -3 → stage 1,  0 → stage 4,  +3 → stage 7
 """
 
-import math
 from psychopy import visual, core
-from function.config.settings import FB_TIME
+from function.config.settings import FB_TIME, FONT
 from utils.event_utils import check_escape
 from utils.labjack_trigger import send_trigger_async, reset_trigger
 
-_GAUGE_RADIUS = 160
-_NEEDLE_LEN   = 140
-_GAUGE_COLOR  = 'white'
-_NEEDLE_COLOR = '#FF4444'
+# ── Layout constants ──────────────────────────────────────────────────────────
+
+_MONKEY_PATH     = "image/monkey.png"
+_MONKEY_SIZE     = (160, 160)
+_MONKEY_POS      = (-180, -80)
+_BUBBLE_POS      = (80,   -60)
+_BUBBLE_TAIL_POS = (-48,  -60)
+_DOMAIN_Y        = 120
+
+# Shared 7-step color ramp (red → green)
+_RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
 
 
-def _score_to_ori(score: float) -> float:
-    """Map score (-3..+3) to PsychoPy clockwise-from-up degrees."""
-    return (score / 3.0) * 135.0
+# ── Domain builders ───────────────────────────────────────────────────────────
 
 
-def _get_feedback_details(score: float) -> tuple[str, str]:
-    """점수 구간에 따른 직관적인 멘트와 색상을 반환합니다."""
-    if score >= 3.0:
-        return "최고예요!", "#4CAF50"       # 진한 초록
-    elif score >= 1:
-        return "잘했어요!", "#8BC34A"       # 연두색
-    elif score >= -0.5:
-        return "나쁘지 않아요!", "#FFEB3B"   # 노란색
-    elif score >= -2.0:
-        return "아쉬워요..", "#FF9800"      # 주황색
-    else:
-        return "조금 더 힘내세요!", "#F44336"  # 빨간색
+
+def _build_text_stims(win: visual.Window, stage: int, cfg: dict) -> list:
+    """Generic builder for domains described by a list of stim specs."""
+    idx, color = stage - 1, cfg['colors'][stage - 1]
+    return [
+        visual.TextStim(win, text=cfg[s['key']][idx], pos=s['pos'],
+                        color=color, height=s['height'], bold=True, font=FONT)
+        for s in cfg['stims']
+    ]
 
 
-def _build_gauge(win: visual.Window) -> list:
-    """Build all static gauge stims: arc, tick marks, numeric labels, pivot."""
+def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict) -> list:
+    bubble_text = cfg['monkey'][stage - 1]
+    bubble_color = _RESULT_COLORS[stage - 1]
     stims = []
-
-    # Outer circle (full ring — only the upper arc is visible in practice)
-    stims.append(visual.Circle(
-        win, radius=_GAUGE_RADIUS,
-        lineColor=_GAUGE_COLOR, fillColor=None, lineWidth=2, edges=72,
-    ))
-
-    for val in range(-3, 4):
-        ori = _score_to_ori(val)
-        # Convert PsychoPy ori back to standard math angle for (x, y) coordinates
-        math_rad = math.radians(90.0 - ori)
-        x = _GAUGE_RADIUS * math.cos(math_rad)
-        y = _GAUGE_RADIUS * math.sin(math_rad)
-
-        stims.append(visual.Line(
-            win,
-            start=(x * 0.82, y * 0.82),
-            end=(x, y),
-            lineColor=_GAUGE_COLOR, lineWidth=2,
-        ))
-        stims.append(visual.TextStim(
-            win, text=str(val),
-            pos=(x * 1.28, y * 1.28),
-            color=_GAUGE_COLOR, height=22,
-        ))
-
-    # Centre pivot dot
-    stims.append(visual.Circle(
-        win, radius=7, pos=(0, 0),
-        fillColor=_GAUGE_COLOR, lineColor=None,
-    ))
-
+    try:
+        stims.append(visual.ImageStim(win, image=_MONKEY_PATH, size=_MONKEY_SIZE, pos=_MONKEY_POS))
+    except Exception:
+        pass
+    stims += [
+        visual.Rect(win, width=260, height=150, pos=_BUBBLE_POS,
+                    fillColor=bubble_color, lineColor=bubble_color),
+        visual.ShapeStim(win, vertices=[(-25, 0), (10, 14), (10, -14)],
+                         pos=_BUBBLE_TAIL_POS, fillColor=bubble_color, lineColor=bubble_color),
+        visual.TextStim(win, text=bubble_text,
+                        pos=_BUBBLE_POS, color='#222222', height=24, bold=True,
+                        font=FONT, wrapWidth=240),
+    ]
     return stims
 
 
+# ── Domain configuration (data + builder reference) ──────────────────────────
+
+_DOMAIN: dict[str, dict] = {
+    'repairing': {
+        'build': _build_text_stims,
+        'monkey': [
+            "7점 만점에 1점이야.\n아직 많이 지저분해...",
+            "7점 만점에 2점이야.\n꽤 지저분해",
+            "7점 만점에 3점이야.\n조금 지저분해",
+            "7점 만점에 4점이야.\n청소 상태가 보통이야",
+            "7점 만점에 5점으로\n조금 깨끗해!",
+            "7점 만점에 6점으로\n꽤 깨끗해!",
+            "7점 만점에 7점으로\n완벽하게 깨끗해!",
+        ],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+            },
+    'tennis': {
+        'build': _build_text_stims,
+        'monkey': [
+            "3 : 0이야.\n완패야...",
+            "3 : 1이야.\n아슬아슬하게 졌어",
+            "3 : 2야.\n패배야",
+            "3 : 3이야.\n무승부야",
+            "2 : 3이야.\n아슬아슬하게 이겼어!",
+            "1 : 3이야.\n승리야!",
+            "0 : 3이야.\n완벽한 승리야!",
+        ],
+        'scores': ["3 : 0", "3 : 1", "3 : 2", "3 : 3", "2 : 3", "1 : 3", "0 : 3"],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+    },
+    'cooking': {
+        'build': _build_text_stims,
+        'monkey': [
+            "7점 만점에 1점이야.\n이 요리는 맛없어...",
+            "7점 만점에 2점이야.\n이 요리는 별로야",
+            "7점 만점에 3점이야.\n조금 아쉬워",
+            "7점 만점에 4점이야.\n이 요리는 보통이야",
+            "7점 만점에 5점으로\n맛있어!",
+            "7점 만점에 6점으로\n정말 맛있어!",
+            "7점 만점에 7점으로\n최고야!",
+        ],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+    },
+}
+
+
+# ── Public entry point ────────────────────────────────────────────────────────
+
 def run_feedback(
     win: visual.Window,
-    global_clock: core.Clock,
     score: float,
+    domain: str,
+    cumulative_score: float = 0,
     handle=None,
     trig_code: int = 0,
 ) -> None:
-    """
-    Display the gauge with the needle pointing directly at *score* along with intuitive text feedback for FB_TIME seconds.
-    """
-    gauge_stims = _build_gauge(win)
-    target_ori  = _score_to_ori(score)
+    """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
+    stage = int(round(score)) + 4
+    cfg   = _DOMAIN.get(domain, _DOMAIN['cooking'])
 
-    # 점수에 따른 멘트와 색상 가져오기
-    feedback_text, text_color = _get_feedback_details(score)
-
-    # 바늘 설정
-    needle = visual.Line(
-        win,
-        start=(0, 0),
-        end=(0, _NEEDLE_LEN),
-        lineColor=_NEEDLE_COLOR,
-        lineWidth=5,
-    )
-    needle.ori = target_ori
-
-    # 피드백 텍스트 자극(TextStim) 설정
-    # 위치를 (0, 260)으로 변경하여 게이지와 '0' 눈금보다 위쪽에 배치합니다.
-    text_stim = visual.TextStim(
-        win,
-        text=feedback_text,
-        pos=(0, 260),     # <--- 이 부분이 수정되었습니다 (위쪽 배치)
-        color=text_color,
-        height=28,       
-        bold=True,
-        wrapWidth=400    
+    stims = (
+        cfg['build'](win, stage, cfg)
+        + _build_monkey_stims(win, stage, cfg)
+        + [visual.TextStim(win, text=f"누적 점수: {int(cumulative_score)}점",
+                           pos=(0, -230), color="#FFF4F4", height=22, font=FONT)]
     )
 
-    clock = core.Clock()
-    _trig_sent = False
-
+    clock     = core.Clock()
+    trig_sent = False
     while clock.getTime() < FB_TIME:
-        for stim in gauge_stims:
+        for stim in stims:
             stim.draw()
-        needle.draw()
-        text_stim.draw()
-        if not _trig_sent:
+        if not trig_sent:
             win.callOnFlip(send_trigger_async, handle, trig_code)
             win.callOnFlip(reset_trigger, handle)
-            _trig_sent = True
+            trig_sent = True
         win.flip()
         check_escape(win)
