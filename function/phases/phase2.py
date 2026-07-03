@@ -72,9 +72,9 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
             rec.log_final(win, {'response': True})
             return confirmed_idx, confirmed_code, confirmed_rt
 
-        # if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-        #     rec.log_final(win, {'response': False})
-        #     return None, None, None
+        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
+            rec.log_final(win, {'response': False})
+            return None, None, None
 
         factory.draw_base_scene(phase_type='phase2')
         kb.draw()

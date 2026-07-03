@@ -15,7 +15,7 @@ MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 0
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
-MAX_RESPONSE_TIME = 10.0          # seconds; None = unlimited
+MAX_RESPONSE_TIME =60.0          # seconds; None = unlimited
 ITI_DURATION      = 1.5          # inter-trial interval (seconds)
 FRAME_RATE        = 60           # Hz – used for frame log sanity checks
 
