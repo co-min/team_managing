@@ -18,10 +18,10 @@ from utils.labjack_trigger import send_trigger_async, reset_trigger
 
 _MONKEY_PATH     = "image/monkey.png"
 _MONKEY_SIZE     = (160, 160)
-_MONKEY_POS      = (-180, -80)
-_BUBBLE_POS      = (80,   -60)
-_BUBBLE_TAIL_POS = (-48,  -60)
-_DOMAIN_Y        = 120
+_MONKEY_POS      = (-130,   0)
+_BUBBLE_POS      = ( 130,   0)
+_BUBBLE_TAIL_POS = (   2,   0)
+_DOMAIN_Y        = 160
 
 # Shared 7-step color ramp (red → green)
 _RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
@@ -128,7 +128,7 @@ def run_feedback(
         cfg['build'](win, stage, cfg)
         + _build_monkey_stims(win, stage, cfg)
         + [visual.TextStim(win, text=f"누적 점수: {int(cumulative_score)}점",
-                           pos=(0, -230), color="#FFF4F4", height=22, font=FONT)]
+                           pos=(0, -160), color="#FFF4F4", height=22, font=FONT)]
     )
 
     clock     = core.Clock()
