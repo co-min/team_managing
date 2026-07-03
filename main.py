@@ -98,7 +98,7 @@ def main() -> None:
 
     cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
 
-    for domain in DOMAINS[1:2]:
+    for domain in DOMAINS:
         # ── Phase 1: competence observable, synergy infer (12 trials) ──────────
         for trial_i in range(P1_TRIALS):
             char_order = p1_schedule[domain][trial_i]
