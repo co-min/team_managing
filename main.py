@@ -141,10 +141,10 @@ def main() -> None:
     cumul = {d: {'phase_1': 0, 'phase_2': 0, 'phase_3': 0} for d in DOMAINS}
 
     for domain in DOMAINS:
-        # _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
-        #                   competence, domain, win, global_clock, subject_id, handle, cumul, score)
-        # _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
-        #                   synergy, domain, win, global_clock, subject_id, handle, cumul, score)
+        _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
+                          competence, domain, win, global_clock, subject_id, handle, cumul, score)
+        _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
+                          synergy, domain, win, global_clock, subject_id, handle, cumul, score)
         _run_phase_trials('phase_3', P3_TRIALS, p3_schedule, run_phase3_trial,
                           synergy, domain, win, global_clock, subject_id, handle, cumul, score)
 
