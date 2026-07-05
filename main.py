@@ -1,11 +1,12 @@
 import random
+import threading
 
-import pandas as pd
 from psychopy import core
 
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
 from function.config.settings import P1_TRIALS, P2_TRIALS
+from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
 from function.io.metadata import save_trial_metadata
@@ -19,9 +20,9 @@ from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK
 
 DOMAINS = ['cooking', 'repairing', 'tennis']
 
-# Fixed seed: all participants receive the same trial layouts (no positional bias).
 _SCHEDULE_SEED = 42
-_ANIMALS = ['duck', 'frog', 'panda', 'rabbit']
+_ANIMALS       = ['duck', 'frog', 'panda', 'rabbit']
+_TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK}
 
 
 def _generate_schedules():
@@ -45,135 +46,83 @@ def _generate_schedules():
     return p1, p2
 
 
-def _load_all_data():
+def _persist_trial(subject_id, record, rows, save_dir):
+    """Flush one trial's data to disk — runs in a background thread during the next ITI."""
+    append_trial_row(subject_id, record)
+    append_frame_rows(subject_id, rows)
+    save_frame_log(rows, save_dir)
+
+
+def _get_feedback_score(score, c1, c2, domain):
+    return score.get(tuple(sorted([c1, c2])), {}).get(domain, 0)
+
+
+def _run_phase_trials(
+    phase, n_trials, schedule, run_fn, data_dict,
+    domain, win, global_clock, subject_id, handle, cumul, score,
+):
     """
-    Load the three stimulus CSVs into fast-lookup dicts.
+    Run all trials for one phase/domain pair.
 
-    competence  : {char_ani: {domain: score}}        e.g. {'A': {'cooking': 1, ...}}
-    synergy     : {(cA, cB): int}                     sorted tuple key
-    score       : {(cA, cB): {domain: int}}           sorted tuple key
+    File I/O for each trial is offloaded to a background thread so that
+    saving overlaps with the following ITI instead of blocking it.
+    The thread is joined after the ITI (before the next trial begins),
+    guaranteeing writes complete before the next save starts.
     """
-    comp_df = pd.read_csv('stimuli/competence_table.csv', skipinitialspace=True)
-    competence = {}
-    for _, row in comp_df.iterrows():
-        char = str(row['char_ani']).strip()
-        competence[char] = {
-            'cooking':   int(row['cooking']),
-            'repairing': int(row['repairing']),
-            'tennis':    int(row['tennis']),
-        }
+    save_thread = None
 
-    syn_df = pd.read_csv('stimuli/synergy_table.csv', skipinitialspace=True)
-    synergy = {}
-    for _, row in syn_df.iterrows():
-        key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
-        synergy[key] = int(row['synergy_score'])
+    for trial_i in range(n_trials):
+        char_order   = schedule[domain][trial_i]
+        stim_pair_id = f"{domain}_{phase}_t{trial_i:02d}"
+        frame_log    = make_frame_log(phase=phase, trial_id=trial_i, stim_pair_id=stim_pair_id)
 
-    score_df = pd.read_csv('stimuli/score_table.csv', skipinitialspace=True)
-    score = {}
-    for _, row in score_df.iterrows():
-        key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
-        score[key] = {
-            'cooking':   int(row['sc_cooking']),
-            'repairing': int(row['sc_repairing']),
-            'tennis':    int(row['sc_tennis']),
-        }
+        run_gaussian_iti(win, global_clock, frame_log)  # saves from previous trial run here
 
-    return competence, synergy, score
+        if save_thread:
+            save_thread.join()  # must finish before this trial's saves can start
+
+        result = run_fn(win, global_clock, frame_log, data_dict, domain, char_order, handle)
+
+        fb_score = 0
+        if result:
+            fb_score = _get_feedback_score(score, result['choice1'], result['choice2'], domain)
+            cumul[domain][phase] += int(round(fb_score)) + 4
+            run_feedback(win, fb_score, domain,
+                         cumulative_score=cumul[domain][phase],
+                         handle=handle, trig_code=_TRIG_FEEDBACK[phase])
+
+        _, record = save_trial_metadata(
+            subject_id=subject_id, phase=phase, domain=domain,
+            trial_id=trial_i, stim_pair_id=stim_pair_id,
+            char_order=char_order, result=result, feedback_score=fb_score,
+        )
+        rows     = get_rows(frame_log)
+        save_dir = build_trial_save_dir(subject_id, phase, stim_pair_id)
+        save_thread = threading.Thread(
+            target=_persist_trial, args=(subject_id, record, rows, save_dir), daemon=True,
+        )
+        save_thread.start()
+
+    if save_thread:
+        save_thread.join()  # last trial's saves must complete before phase ends
 
 
 def main() -> None:
-    ctx = initiate()
-    win = ctx.win
-    subject_id = ctx.subject_id
-    handle = ctx.handle
+    ctx          = initiate()
+    win          = ctx.win
+    subject_id   = ctx.subject_id
+    handle       = ctx.handle
     global_clock = core.Clock()
 
-    competence, synergy, score = _load_all_data()
-    p1_schedule, p2_schedule = _generate_schedules()
-
-    def get_feedback_score(c1, c2, domain):
-        key = tuple(sorted([c1, c2]))
-        return score.get(key, {}).get(domain, 0)
-
+    competence, synergy, score = load_all_data()
+    p1_schedule, p2_schedule   = _generate_schedules()
     cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
 
     for domain in DOMAINS:
-        # ── Phase 1: competence observable, synergy infer (12 trials) ──────────
-        for trial_i in range(P1_TRIALS):
-            char_order = p1_schedule[domain][trial_i]
-            stim_pair_id = f"{domain}_p1_t{trial_i:02d}"
-            frame_log = make_frame_log(
-                phase="phase_1",
-                trial_id=trial_i,
-                stim_pair_id=stim_pair_id,
-            )
-            run_gaussian_iti(win, global_clock, frame_log)
-            result = run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle)
-
-            fb_score = 0
-            if result:
-                fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                cumul[domain]['phase_1'] += int(round(fb_score)) + 4
-                run_feedback(win, fb_score, domain,
-                             cumulative_score=cumul[domain]['phase_1'],
-                             handle=handle, trig_code=TRIG_P1_FEEDBACK)
-
-            _, record = save_trial_metadata(
-                subject_id=subject_id,
-                phase="phase_1",
-                domain=domain,
-                trial_id=trial_i,
-                stim_pair_id=stim_pair_id,
-                char_order=char_order,
-                result=result,
-                feedback_score=fb_score,
-            )
-            append_trial_row(subject_id, record)
-            rows = get_rows(frame_log)
-            append_frame_rows(subject_id, rows)
-            save_frame_log(
-                rows,
-                build_trial_save_dir(subject_id, "phase_1", stim_pair_id),
-            )
-
-        # ── Phase 2: synergy observable, competence infer (18 trials) ──────────
-        for trial_i in range(P2_TRIALS):
-            char_order = p2_schedule[domain][trial_i]
-            stim_pair_id = f"{domain}_p2_t{trial_i:02d}"
-            frame_log = make_frame_log(
-                phase="phase_2",
-                trial_id=trial_i,
-                stim_pair_id=stim_pair_id,
-            )
-            run_gaussian_iti(win, global_clock, frame_log)
-            result = run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle)
-
-            fb_score = 0
-            if result:
-                fb_score = get_feedback_score(result['choice1'], result['choice2'], domain)
-                cumul[domain]['phase_2'] += int(round(fb_score)) + 4
-                run_feedback(win, fb_score, domain,
-                             cumulative_score=cumul[domain]['phase_2'],
-                             handle=handle, trig_code=TRIG_P2_FEEDBACK)
-
-            _, record = save_trial_metadata(
-                subject_id=subject_id,
-                phase="phase_2",
-                domain=domain,
-                trial_id=trial_i,
-                stim_pair_id=stim_pair_id,
-                char_order=char_order,
-                result=result,
-                feedback_score=fb_score,
-            )
-            append_trial_row(subject_id, record)
-            rows = get_rows(frame_log)
-            append_frame_rows(subject_id, rows)
-            save_frame_log(
-                rows,
-                build_trial_save_dir(subject_id, "phase_2", stim_pair_id),
-            )
+        _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
+                          competence, domain, win, global_clock, subject_id, handle, cumul, score)
+        _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
+                          synergy, domain, win, global_clock, subject_id, handle, cumul, score)
 
     win.close()
     core.quit()
