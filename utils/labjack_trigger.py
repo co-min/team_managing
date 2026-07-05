@@ -47,10 +47,13 @@ TRIG_P2_CHOICE2   = 0x28   # 0010_10xx  + ANIMAL_IDX → 0x28~0x2B
 TRIG_P2_FEEDBACK  = 0x2C   # 0010_1100
 
 # =========================================
-# stimulus presentation
+# no-cue choice trial (phase3 – choice task)
 # =========================================
 
-
+TRIG_P3_STIMULUS  = 0x30   # 0011_0000  stimulus onset
+TRIG_P3_CHOICE1   = 0x34   # 0011_01xx  + ANIMAL_IDX → 0x34~0x37
+TRIG_P3_CHOICE2   = 0x38   # 0011_10xx  + ANIMAL_IDX → 0x38~0x3B
+TRIG_P3_FEEDBACK  = 0x3C   # 0011_1100
 
 # =========================================
 # trial boundary

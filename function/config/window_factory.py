@@ -41,7 +41,7 @@ def create_window() -> visual.Window:
 
 
 class VisualObjectFactory:
-    def __init__(self, win):
+    def __init__(self, win, animal_groups=None):
         self.win = win
 
         layout = self._compute_layout()
@@ -49,25 +49,37 @@ class VisualObjectFactory:
 
         # 슬롯 위치: 상(0), 하(1), 우(2), 좌(3) — apply_layout에서 항상 덮어씀
         _slot_defaults = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
-        self.char_info = {
-            # Group 0
-            'duck':    {'pos': _slot_defaults[0], 'img': 'image/objectives/duck.png'},
-            'frog':    {'pos': _slot_defaults[1], 'img': 'image/objectives/frog.png'},
-            'panda':   {'pos': _slot_defaults[2], 'img': 'image/objectives/panda.png'},
-            'rabbit':  {'pos': _slot_defaults[3], 'img': 'image/objectives/rabbit.png'},
-            # Group 1
-            'bear':    {'pos': _slot_defaults[0], 'img': 'image/objectives/bear.png'},
-            'cat':     {'pos': _slot_defaults[1], 'img': 'image/objectives/cat.png'},
-            'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
-            'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
-            # Group 2
-            'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
-            'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
-            'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
-            'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
-        }
 
-        self.char_list = ['duck', 'frog', 'panda', 'rabbit']
+        if animal_groups is not None:
+            # CSV에서 읽은 그룹 정보로 동적으로 char_info 구성
+            self.char_info = {}
+            for group in animal_groups:
+                for slot_idx, animal in enumerate(group):
+                    self.char_info[animal] = {
+                        'pos': _slot_defaults[slot_idx % 4],
+                        'img': f'image/objectives/{animal}.png',
+                    }
+        else:
+            # 폴백: 하드코딩된 12마리 (하위 호환성 유지)
+            self.char_info = {
+                # Group 0
+                'duck':    {'pos': _slot_defaults[0], 'img': 'image/objectives/duck.png'},
+                'frog':    {'pos': _slot_defaults[1], 'img': 'image/objectives/frog.png'},
+                'panda':   {'pos': _slot_defaults[2], 'img': 'image/objectives/panda.png'},
+                'rabbit':  {'pos': _slot_defaults[3], 'img': 'image/objectives/rabbit.png'},
+                # Group 1
+                'bear':    {'pos': _slot_defaults[0], 'img': 'image/objectives/bear.png'},
+                'cat':     {'pos': _slot_defaults[1], 'img': 'image/objectives/cat.png'},
+                'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
+                'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
+                # Group 2
+                'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
+                'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
+                'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
+                'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+            }
+
+        self.char_list = list(animal_groups[0]) if animal_groups else ['duck', 'frog', 'panda', 'rabbit']
 
         # Slot positions: index 0=up, 1=down, 2=right, 3=left
         self._slot_positions = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
@@ -139,12 +151,12 @@ class VisualObjectFactory:
         az = self._animal_size
         bz = az + 10   # 테두리는 동물 이미지보다 3px 크게
         for char_name, info in self.char_info.items():
-            # 파트 2용 백그라운드 블록 (apply_layout에서 위치/크기 재설정됨)
+            # part 2 백그라운드 블록 (apply_layout에서 위치/크기 재설정됨)
             self.block_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
                 width=az, height=az,
-                fillColor='white',
+                fillColor= None,
                 lineColor=None,
                 opacity=0,
                 units='pix'
@@ -159,18 +171,18 @@ class VisualObjectFactory:
                 units='pix'
             )
 
-            # 파트 1용 하이라이트 테두리
+            # part 1 하이라이트 테두리
             self.border_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
                 width=bz, height=bz,
                 lineWidth=3,
-                lineColor='white',
+                lineColor= None,
                 fillColor=None,
                 units='pix'
             )
 
-            # 파트 2용 어두운 반투명 오버레이
+            # part 2 어두운 반투명 오버레이
             self.overlay_stims[char_name] = visual.Rect(
                 win=self.win,
                 pos=info['pos'],
@@ -197,7 +209,7 @@ class VisualObjectFactory:
             self.block_stims[char_name].opacity = 0
 
     def set_animal_locked(self, char_name: str, locked: bool) -> None:
-        """Choice 1 확정 시 동물 이미지 위에 어두운 오버레이를 활성화/비활성화합니다."""
+        """Choice 1 확정 시 동물 이미지 위에 OVERLAY를 activate/disactivate 합니다."""
         if locked:
             self._locked_chars.add(char_name)
         else:
@@ -224,23 +236,17 @@ class VisualObjectFactory:
 
     def draw_base_scene(self, phase_type='phase1'):
         """
-        화면에 기본적인 실험 배경을 그립니다.
-        상단 도메인 퀘스천과 4마리 동물 캐릭터를 순서대로 렌더링합니다.
+        DOMAIN QUESTION과 ANIMALS를 순서대로 RENDERING합니다.
         """
         self.domain_stim.draw()
 
+        show_blocks = phase_type == 'phase2'
         for char_name in self.char_list:
-            # 파트 2(시너지)일 때는 점수에 따라 바뀌는 컬러 블록 배경을 먼저 그립니다
-            if phase_type == 'phase2':
+            if show_blocks:
                 self.block_stims[char_name].draw()
-
             self.animal_stims[char_name].draw()
-
-            # 확정된 동물은 어두운 오버레이로 덮어 선택 표시
             if char_name in self._locked_chars:
                 self.overlay_stims[char_name].draw()
-
-            # 파트 1(역량): 역량 점수 하이라이트 / 파트 2(시너지): 시너지 관계 테두리
             self.border_stims[char_name].draw()
 
 
@@ -248,9 +254,15 @@ class VisualObjectFactory:
 _shared_factory: 'VisualObjectFactory | None' = None
 
 
-def get_shared_factory(win: visual.Window) -> VisualObjectFactory:
-    """Return (or lazily create) the one shared VisualObjectFactory per window."""
+def get_shared_factory(win: visual.Window, animal_groups=None) -> VisualObjectFactory:
+    """Return (or lazily create) the one shared VisualObjectFactory per window.
+
+    animal_groups : list of lists returned by load_all_data().
+                    Pass on the first call (from main) to build the factory
+                    from the actual CSV groups. Subsequent calls (from phases)
+                    omit it and receive the already-initialised instance.
+    """
     global _shared_factory
     if _shared_factory is None:
-        _shared_factory = VisualObjectFactory(win)
+        _shared_factory = VisualObjectFactory(win, animal_groups)
     return _shared_factory

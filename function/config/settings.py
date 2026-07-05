@@ -42,7 +42,8 @@ ARROW_RADIUS = 30
 
 # --- Trial ---
 P1_TRIALS = 12
-P2_TRIALS = 18
+P2_TRIALS = 12
+P3_TRIALS = 6
 
 # --- Feed back ---
 FB_TIME = 2
@@ -55,5 +56,5 @@ CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.st
 # Synergy score -> block fill colour
 SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
 
-# Colour for the locked Choice 1 block
-LOCKED_COLOR = '#4488ff'
+COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
+

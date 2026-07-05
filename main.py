@@ -5,23 +5,25 @@ from psychopy import core
 
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, P2_TRIALS
+from function.config.settings import P1_TRIALS, P2_TRIALS, P3_TRIALS
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
 from function.io.metadata import save_trial_metadata
 from function.io.path_builder import build_trial_save_dir
 from function.io.subject_csv import append_trial_row, append_frame_rows
+from function.config.window_factory import get_shared_factory
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
+from function.phases.phase3 import run_phase3_trial
 from function.phases.feedback import run_feedback
-from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK
+from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 
 
 DOMAINS = ['cooking', 'repairing', 'tennis']
 
 _SCHEDULE_SEED = 42
-_TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK}
+_TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK, 'phase_3': TRIG_P3_FEEDBACK}
 
 
 def _generate_schedules(animal_groups):
@@ -61,7 +63,8 @@ def _generate_schedules(animal_groups):
 
     p1 = {d: make_schedule(P1_TRIALS) for d in DOMAINS}
     p2 = {d: make_schedule(P2_TRIALS) for d in DOMAINS}
-    return p1, p2
+    p3 = {d: make_schedule(P3_TRIALS) for d in DOMAINS}
+    return p1, p2, p3
 
 
 def _persist_trial(subject_id, record, rows, save_dir):
@@ -133,14 +136,18 @@ def main() -> None:
     global_clock = core.Clock()
 
     competence, synergy, score, animal_groups = load_all_data()
-    p1_schedule, p2_schedule                  = _generate_schedules(animal_groups)
-    cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
+    get_shared_factory(win, animal_groups)
+    p1_schedule, p2_schedule, p3_schedule      = _generate_schedules(animal_groups)
+    cumul = {d: {'phase_1': 0, 'phase_2': 0, 'phase_3': 0} for d in DOMAINS}
 
     for domain in DOMAINS:
-        _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
-                          competence, domain, win, global_clock, subject_id, handle, cumul, score)
-        _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
+        # _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
+        #                   competence, domain, win, global_clock, subject_id, handle, cumul, score)
+        # _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
+        #                   synergy, domain, win, global_clock, subject_id, handle, cumul, score)
+        _run_phase_trials('phase_3', P3_TRIALS, p3_schedule, run_phase3_trial,
                           synergy, domain, win, global_clock, subject_id, handle, cumul, score)
+
 
     win.close()
     core.quit()

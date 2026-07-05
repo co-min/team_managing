@@ -8,7 +8,7 @@ Arrow → animal mapping
 from psychopy import visual, event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE
+from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE, COMPETENCE_COLOR as _COMPETENCE_COLOR
 from function.io.frame_logger import FrameRecorder
 from utils.arrow_keyboard import ArrowKeyboard
 from utils.event_utils import check_escape
@@ -17,11 +17,6 @@ from utils.labjack_trigger import (
     TRIG_P1_STIMULUS, TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
 )
 
-
-# Competence score -> border colour
-_SCORE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
-
-_LOCKED_SIZE = 212   # px – light-blue outline drawn around the locked Choice 1 animal
 
 # ArrowKeyboard sits at the centre of the cross, between the 4 animals
 _KB_Y = 0
@@ -54,7 +49,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     factory.reset_ui_states()
     for char_name in char_list:
         score = competence[_CHAR_CODE[char_name]][domain]
-        factory.border_stims[char_name].lineColor = _SCORE_COLOR.get(score, 'white')
+        factory.border_stims[char_name].lineColor = _COMPETENCE_COLOR.get(score, 'white')
 
     kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
     rec = FrameRecorder(frame_log, global_clock)
