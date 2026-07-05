@@ -110,6 +110,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     kb.set_excluded(choice1_idx)
     for name in char_list:
         factory.border_stims[name].opacity = 0
+    factory.border_stims[char_list[choice1_idx]].opacity = 1   
     preview2_idx = None
     rt2 = None
     clock = core.Clock()
@@ -132,6 +133,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                     preview2_idx = idx
                     for name in char_list:
                         factory.border_stims[name].opacity = 0
+                    factory.border_stims[char_list[choice1_idx]].opacity = 1  # choice1 테두리 유지
                     factory.border_stims[char_list[idx]].opacity = 1
 
         if choice2_code is not None:

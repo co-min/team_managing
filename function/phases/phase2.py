@@ -23,22 +23,34 @@ from utils.labjack_trigger import (
 _KB_Y = 0
 
 
-def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy):
-    """Color every non-pivot block by its synergy score with the pivot animal."""
+def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, update_borders=True):
+    """Color every non-pivot block (and optionally border) by its synergy score with the pivot animal.
+
+    update_borders=False → choice2 단계에서 블록만 갱신하고 choice1의 테두리는 유지합니다.
+    """
     for i, char_name in enumerate(char_list):
         if i == pivot_idx:
+            factory.block_stims[char_name].opacity = 0
+            if update_borders:
+                factory.border_stims[char_name].opacity = 0
             continue
         other_code = _CHAR_CODE[char_name]
         score = synergy.get(tuple(sorted([pivot_code, other_code])), 0)
-        factory.block_stims[char_name].setFillColor(_SYNERGY_COLOR.get(score, 'white'))
+        color = _SYNERGY_COLOR.get(score, 'white')
+        factory.block_stims[char_name].setFillColor(color)
         factory.block_stims[char_name].opacity = 1
+        if update_borders:
+            factory.border_stims[char_name].setLineColor(color)
+            factory.border_stims[char_name].lineWidth = 16
+            factory.border_stims[char_name].opacity = 1
 
 
 def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
-                     stim_trig, choice_trig_base, excluded_idx=None):
+                     stim_trig, choice_trig_base, excluded_idx=None, update_synergy=True):
     """
     Arrow-key preview + space-to-confirm loop.
 
+    update_synergy=False → choice2 단계에서 호출 시 choice1의 시너지 테두리를 보존합니다.
     Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
     """
     clock = core.Clock()
@@ -61,8 +73,10 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
                 idx = kb.select(pressed, excluded_idx=excluded_idx)
                 if idx is not None:
                     preview_idx = idx
-                    factory.block_stims[char_list[idx]].opacity = 0
-                    _apply_synergy_colors(factory, char_list, idx, _CHAR_CODE[char_list[idx]], synergy)
+                    _apply_synergy_colors(
+                        factory, char_list, idx, _CHAR_CODE[char_list[idx]], synergy,
+                        update_borders=update_synergy,
+                    )
 
         if confirmed_code is not None:
             factory.draw_base_scene(phase_type='phase2')
@@ -134,6 +148,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         win, factory, kb, rec, char_list, synergy,
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
         excluded_idx=choice1_idx,
+        update_synergy=False,
     )
     if choice2_code is None:
         return None

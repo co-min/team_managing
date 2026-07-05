@@ -126,7 +126,7 @@ class VisualObjectFactory:
         )
 
         az = self._animal_size
-        bz = az + 16   # 테두리는 동물 이미지보다 16px 크게
+        bz = az + 10   # 테두리는 동물 이미지보다 3px 크게
         for char_name, info in self.char_info.items():
             # 파트 2용 백그라운드 블록 (apply_layout에서 위치/크기 재설정됨)
             self.block_stims[char_name] = visual.Rect(
@@ -180,6 +180,7 @@ class VisualObjectFactory:
         self._locked_chars.clear()
         for char_name in self.char_list:
             self.border_stims[char_name].setLineColor('white')
+            self.border_stims[char_name].lineWidth = 3
             self.border_stims[char_name].opacity = 0
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0
@@ -228,9 +229,8 @@ class VisualObjectFactory:
             if char_name in self._locked_chars:
                 self.overlay_stims[char_name].draw()
 
-            # 파트 1(역량)일 때는 텍스처 위에 하이라이트 테두리를 덮어 그립니다
-            if phase_type == 'phase1':
-                self.border_stims[char_name].draw()
+            # 파트 1(역량): 역량 점수 하이라이트 / 파트 2(시너지): 시너지 관계 테두리
+            self.border_stims[char_name].draw()
 
 
 # ── Shared singleton ──────────────────────────────────────────────────────────
