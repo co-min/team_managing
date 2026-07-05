@@ -26,7 +26,7 @@ _TRIAL_FIELDS = [
     "layout_up", "layout_down", "layout_right", "layout_left",
     "response_made",
     "choice1_code", "choice2_code", "choice1_animal", "choice2_animal",
-    "rt_choice1", "rt_choice2", "feedback_score", "timestamp",
+    "rt_choice1", "rt_choice2", "feedback_score", "elapsed_time", "timestamp",
 ]
 
 _FRAME_FIELDS = [

@@ -38,7 +38,7 @@ DOMAINS  = ["cooking", "repairing", "tennis"]
 PHASE_N      = {"phase_1": 12, "phase_2": 12, "phase_3": 6}
 PHASE_OFFSET = {"phase_1": 0,  "phase_2": 12, "phase_3": 24}  # 0-based start
 
-DOMAIN_KR = {"cooking": "요리 (Cooking)", "repairing": "수리 (Repairing)", "tennis": "테니스 (Tennis)"}
+DOMAIN_KR = {"cooking": "Cooking", "repairing": "Repairing", "tennis": "Tennis"}
 PHASE_KR  = {"phase_1": "Phase 1\n(능력 단서)", "phase_2": "Phase 2\n(시너지 단서)", "phase_3": "Phase 3\n(단서 없음)"}
 PHASE_COL = {"phase_1": "#4C72B0", "phase_2": "#DD8452", "phase_3": "#55A868"}
 
@@ -196,7 +196,7 @@ def plot_accuracy_per_trial(
 
     n_subs = df_acc["n"].max() if "n" in df_acc.columns else "?"
     fig.suptitle(
-        f"Domain별 Trial-by-Trial 정답률  (N ≈ {n_subs}명)",
+        f"Domain별 Trial-by-Trial 정답률  (N {n_subs}명)",
         fontsize=13, fontweight="bold",
     )
     fig.tight_layout(rect=[0, 0.05, 1, 0.97])

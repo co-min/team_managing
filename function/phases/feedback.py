@@ -128,7 +128,7 @@ def run_feedback(
         cfg['build'](win, stage, cfg)
         + _build_monkey_stims(win, stage, cfg)
         + [visual.TextStim(win, text=f"누적 점수: {int(cumulative_score)}점",
-                           pos=(0, -160), color="#FFF4F4", height=22, font=FONT)]
+                           pos=(0, -160), color="#FFF4F4", height=30, font=FONT, bold = True)]
     )
 
     clock     = core.Clock()

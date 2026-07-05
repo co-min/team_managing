@@ -116,6 +116,7 @@ def _run_phase_trials(
             subject_id=subject_id, phase=phase, domain=domain,
             trial_id=trial_i, stim_pair_id=stim_pair_id,
             char_order=char_order, result=result, feedback_score=fb_score,
+            elapsed_time=global_clock.getTime(),
         )
         rows     = get_rows(frame_log)
         save_dir = build_trial_save_dir(subject_id, phase, domain, stim_pair_id)
