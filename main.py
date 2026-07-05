@@ -118,7 +118,7 @@ def _run_phase_trials(
             char_order=char_order, result=result, feedback_score=fb_score,
         )
         rows     = get_rows(frame_log)
-        save_dir = build_trial_save_dir(subject_id, phase, stim_pair_id)
+        save_dir = build_trial_save_dir(subject_id, phase, domain, stim_pair_id)
         save_thread = threading.Thread(
             target=_persist_trial, args=(subject_id, record, rows, save_dir), daemon=True,
         )

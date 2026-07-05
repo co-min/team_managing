@@ -4,7 +4,7 @@ metadata.py
 Per-trial behavioral metadata saver.
 
 Saves JSON to:
-  data/sub-{subject_id}/{phase}/{stim_pair_id}/metadata.json
+  data/sub-{subject_id}/{domain}/{phase}/{stim_pair_id}/metadata.json
 """
 
 import json
@@ -75,7 +75,7 @@ def save_trial_metadata(
         subject_id, phase, domain, trial_id, stim_pair_id,
         char_order, result, feedback_score,
     )
-    save_dir = ensure_trial_save_dir(subject_id, phase, stim_pair_id)
+    save_dir = ensure_trial_save_dir(subject_id, phase, domain, stim_pair_id)
     out_path = save_dir / "metadata.json"
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
