@@ -19,6 +19,13 @@ def load_all_data():
             'tennis':    int(row['tennis']),
         }
 
+    n_chars       = comp_df['char_ani'].nunique()
+    n_groups      = len(comp_df) // n_chars
+    animal_groups = [
+        list(comp_df.iloc[g * n_chars:(g + 1) * n_chars]['animal'].str.strip())
+        for g in range(n_groups)
+    ]
+
     syn_df = pd.read_csv('stimuli/synergy_table.csv', skipinitialspace=True)
     synergy = {}
     for _, row in syn_df.iterrows():
@@ -35,4 +42,4 @@ def load_all_data():
             'tennis':    int(row['sc_tennis']),
         }
 
-    return competence, synergy, score
+    return competence, synergy, score, animal_groups

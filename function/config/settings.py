@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+import pandas as pd
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
 ROOT_DIR        = Path(__file__).resolve().parents[2]
@@ -31,22 +32,8 @@ HOVER_BUTTON_LABEL     = "+"
 HOVER_PROMPT_TEXT      = "중앙을 응시해주세요."
 
 # ─── Colours ─────────────────────────────────────────────────────────────────
-WHITE_COLOR    = "white"
+WHITE_COLOR = "white"
 GREEN_COLOR = "green"
-BLACK_COLOR    = "black"
-
-# --- Image objectives ---
-IMG_OFFSET = 180
-IMG_SIZE = (120, 120)
-
-positions = {
-            'top_far': (0, IMG_OFFSET * 3), 
-            'top': (0, IMG_OFFSET),           
-            'bottom': (0, -IMG_OFFSET),       
-            'left': (-IMG_OFFSET, 0),        
-            'right': (IMG_OFFSET, 0)          
-        }
-
 
 # --- Event Keys ---
 ARROW_OFFSET = 60
@@ -61,8 +48,9 @@ P2_TRIALS = 18
 FB_TIME = 2
 
 
-# Animal name -> char_ani code (matches the 'synergy' dict keys in main.py)
-CHAR_CODE = {'duck': 'A', 'frog': 'B', 'panda': 'C', 'rabbit': 'D'}
+# Animal name -> char_ani code — derived from competence_table.csv (no hardcoding)
+_comp_df  = pd.read_csv(ROOT_DIR / 'stimuli' / 'competence_table.csv', skipinitialspace=True)
+CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
 
 # Synergy score -> block fill colour
 SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}

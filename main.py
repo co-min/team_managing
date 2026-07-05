@@ -21,28 +21,46 @@ from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK
 DOMAINS = ['cooking', 'repairing', 'tennis']
 
 _SCHEDULE_SEED = 42
-_ANIMALS       = ['duck', 'frog', 'panda', 'rabbit']
 _TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK}
 
 
-def _generate_schedules():
+def _generate_schedules(animal_groups):
     """
     Build per-domain, per-phase lists of animal orderings.
 
-    Each element is a 4-item permutation of _ANIMALS:
-      [up_animal, down_animal, right_animal, left_animal]
+    animal_groups[g][s] = the s-th char_ani slot's animal in group g.
+    Each slot (A/B/C/D) independently cycles through its n_g animals
+    in balanced blocks, so every animal appears equally often.
 
-    Using a fixed seed guarantees every participant sees the same
-    spatial arrangement on every trial.
+    Block structure: n_trials // n_g blocks, each block of n_g trials
+    contains each slot-animal exactly once (shuffled within the block).
+    Position order within each trial is also randomised.
 
     Returns
     -------
-    p1_schedule : {domain: [char_order_t0, char_order_t1, ...]}  length = P1_TRIALS
-    p2_schedule : {domain: [char_order_t0, ...]}                 length = P2_TRIALS
+    p1_schedule : {domain: [char_order_t0, ...]}  length = P1_TRIALS
+    p2_schedule : {domain: [char_order_t0, ...]}  length = P2_TRIALS
     """
-    rng = random.Random(_SCHEDULE_SEED)
-    p1 = {d: [rng.sample(_ANIMALS, 4) for _ in range(P1_TRIALS)] for d in DOMAINS}
-    p2 = {d: [rng.sample(_ANIMALS, 4) for _ in range(P2_TRIALS)] for d in DOMAINS}
+    rng      = random.Random(_SCHEDULE_SEED)
+    n_g      = len(animal_groups)     # number of groups (3)
+    n_s      = len(animal_groups[0])  # number of char_ani slots (4)
+
+    # per_slot[s] = [animal_for_slot_s_in_group_0, group_1, group_2]
+    per_slot = [[animal_groups[g][s] for g in range(n_g)] for s in range(n_s)]
+
+    def make_schedule(n_trials):
+        order = []
+        for _ in range(n_trials // n_g):
+            # Each slot shuffles its n_g animals independently for this block
+            shuffled = [rng.sample(per_slot[s], n_g) for s in range(n_s)]
+            for t in range(n_g):
+                trial = [shuffled[s][t] for s in range(n_s)]
+                rng.shuffle(trial)   # randomise up/down/left/right positions
+                order.append(trial)
+        return order
+
+    p1 = {d: make_schedule(P1_TRIALS) for d in DOMAINS}
+    p2 = {d: make_schedule(P2_TRIALS) for d in DOMAINS}
     return p1, p2
 
 
@@ -114,8 +132,8 @@ def main() -> None:
     handle       = ctx.handle
     global_clock = core.Clock()
 
-    competence, synergy, score = load_all_data()
-    p1_schedule, p2_schedule   = _generate_schedules()
+    competence, synergy, score, animal_groups = load_all_data()
+    p1_schedule, p2_schedule                  = _generate_schedules(animal_groups)
     cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
 
     for domain in DOMAINS:

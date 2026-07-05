@@ -39,7 +39,6 @@ def create_window() -> visual.Window:
     )
     return win
 
-from psychopy import visual
 
 class VisualObjectFactory:
     def __init__(self, win):
@@ -48,12 +47,24 @@ class VisualObjectFactory:
         layout = self._compute_layout()
         av, ah = layout['animal_v'], layout['animal_h']
 
-        # 상(Duck), 하(Frog), 우(Panda), 좌(Rabbit) — 화살표 방향과 일치
+        # 슬롯 위치: 상(0), 하(1), 우(2), 좌(3) — apply_layout에서 항상 덮어씀
+        _slot_defaults = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
         self.char_info = {
-            'duck':   {'pos': (   0,  av), 'img': 'image/objectives/duck.png'},
-            'frog':   {'pos': (   0, -av), 'img': 'image/objectives/frog.png'},
-            'panda':  {'pos': ( ah,    0), 'img': 'image/objectives/panda.png'},
-            'rabbit': {'pos': (-ah,    0), 'img': 'image/objectives/rabbit.png'}
+            # Group 0
+            'duck':    {'pos': _slot_defaults[0], 'img': 'image/objectives/duck.png'},
+            'frog':    {'pos': _slot_defaults[1], 'img': 'image/objectives/frog.png'},
+            'panda':   {'pos': _slot_defaults[2], 'img': 'image/objectives/panda.png'},
+            'rabbit':  {'pos': _slot_defaults[3], 'img': 'image/objectives/rabbit.png'},
+            # Group 1
+            'bear':    {'pos': _slot_defaults[0], 'img': 'image/objectives/bear.png'},
+            'cat':     {'pos': _slot_defaults[1], 'img': 'image/objectives/cat.png'},
+            'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
+            'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
+            # Group 2
+            'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
+            'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
+            'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
+            'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
         }
 
         self.char_list = ['duck', 'frog', 'panda', 'rabbit']
