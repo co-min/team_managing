@@ -21,6 +21,7 @@ FIELDNAMES = [
     "global_time",
     "flip_time",
     "event_marker",
+    "ttl_code",
 ]
 
 

@@ -121,7 +121,7 @@ def run_feedback(
     trig_code: int = 0,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
-    stage = int(round(score)) + 4
+    stage = max(1, min(7, int(round(score)) - 2))
     cfg   = _DOMAIN.get(domain, _DOMAIN['cooking'])
 
     stims = (

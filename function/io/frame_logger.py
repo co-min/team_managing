@@ -23,6 +23,7 @@ class FrameLog(TypedDict):
     stim_pair_id: str
     onset_time:   Optional[float]
     rows:         List[Dict[str, Any]]
+    ttl_code:     Optional[int]
 
 
 def make_frame_log(phase: str, trial_id: int, stim_pair_id: str) -> FrameLog:
@@ -32,6 +33,7 @@ def make_frame_log(phase: str, trial_id: int, stim_pair_id: str) -> FrameLog:
         "stim_pair_id": stim_pair_id,
         "onset_time":   None,
         "rows":         [],
+        "ttl_code":     None,
     }
 
 
@@ -47,6 +49,7 @@ def log_frame(
     flip_time: float,
     global_time: float,
     event_marker: str = "",
+    ttl_code: Optional[int] = None,
 ) -> FrameLog:
     """Return a new FrameLog with one frame entry appended."""
     elapsed = (flip_time - log["onset_time"]) if log["onset_time"] is not None else 0.0
@@ -59,6 +62,7 @@ def log_frame(
         "global_time":  round(global_time, 6),
         "flip_time":    round(flip_time, 6),
         "event_marker": event_marker,
+        "ttl_code":     ttl_code,
     }
 
     log["rows"].append(row)
@@ -105,13 +109,21 @@ class FrameRecorder:
         """
         self.idx = 0
 
-    def flip_and_log(self, win, *, marker: Optional[str] = None) -> float:
+    def flip_and_log(
+        self,
+        win,
+        *,
+        marker: Optional[str] = None,
+        ttl_code: Optional[int] = None,
+    ) -> float:
         """Flip the window, log the frame, and return ``flip_time``.
 
         On the first frame of a segment (``idx == 0``) onset is set. When
         *marker* is None the event marker defaults to ``"stimulus_onset"`` on the
         first frame and ``""`` afterwards; pass *marker* to override (e.g. a
         custom per-segment onset label).
+        Pass *ttl_code* on frames where a TTL pulse was sent so the code is
+        recorded in the CSV.
         """
         flip_time = win.flip()
         if self.idx == 0:
@@ -124,6 +136,7 @@ class FrameRecorder:
             flip_time=flip_time,
             global_time=self.global_clock.getTime(),
             event_marker=marker,
+            ttl_code=ttl_code,
         )
         self.idx += 1
         return flip_time

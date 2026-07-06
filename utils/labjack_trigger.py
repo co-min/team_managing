@@ -123,11 +123,12 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
       EIO_STATE = code  →  CIO0(latch) HIGH  →  busy-wait  →  CIO0 LOW  →  EIO_STATE = 0
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
     """
+    t_start = time.perf_counter()
+    label = "SEND" if (handle is not None and _LJM_AVAILABLE) else "SEND(sim)"
+    print(f"[LabJack] {label} code={hex(code)} ({t_start:.4f}s)")
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
-        t_start = time.perf_counter()
-        #print(f"[LabJack] SEND code={hex(code)} ({t_start:.4f}s)")
         ljm.eWriteName(handle, "EIO_STATE", int(code))
         ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH (rising edge → Natus 캡처)
         while time.perf_counter() - t_start < pulse_s:
@@ -150,6 +151,8 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
 
 def send_trigger_async(handle: int | None, code: int):
     """EIO_STATE + CIO0(latch) 설정 (비블로킹). 리셋은 호출자가 reset_trigger()로 처리."""
+    label = "SEND_ASYNC" if (handle is not None and _LJM_AVAILABLE) else "SEND_ASYNC(sim)"
+    print(f"[LabJack] {label} code={hex(code)} ({time.perf_counter():.4f}s)")
     if handle is None or not _LJM_AVAILABLE:
         return
     try:

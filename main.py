@@ -108,7 +108,7 @@ def _run_phase_trials(
         fb_score = 0
         if result:
             fb_score = _get_feedback_score(score, result['choice1'], result['choice2'], domain)
-            cumul[domain][phase] += int(round(fb_score)) + 4
+            cumul[domain][phase] += max(1, min(7, int(round(fb_score)) - 2))
             run_feedback(win, fb_score, domain,
                          cumulative_score=cumul[domain][phase],
                          handle=handle, trig_code=_TRIG_FEEDBACK[phase])
