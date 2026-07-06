@@ -63,8 +63,9 @@ def _generate_schedules(animal_groups):
 
     p1 = {d: make_schedule(P1_TRIALS) for d in DOMAINS}
     p2 = {d: make_schedule(P2_TRIALS) for d in DOMAINS}
-    p3 = {d: make_schedule(P3_TRIALS) for d in DOMAINS}
-    return p1, p2, p3
+    # p3 = {d: make_schedule(P3_TRIALS) for d in DOMAINS}
+    # return p1, p2, p3
+    return p1, p2
 
 
 def _persist_trial(subject_id, record, rows, save_dir):
@@ -139,15 +140,14 @@ def main() -> None:
     competence, synergy, score, animal_groups = load_all_data()
     get_shared_factory(win, animal_groups)
     p1_schedule, p2_schedule, p3_schedule      = _generate_schedules(animal_groups)
-    cumul = {d: {'phase_1': 0, 'phase_2': 0, 'phase_3': 0} for d in DOMAINS}
+    # cumul = {d: {'phase_1': 0, 'phase_2': 0, 'phase_3': 0} for d in DOMAINS}
+    cumul = {d: {'phase_1': 0, 'phase_2': 0} for d in DOMAINS}
 
     for domain in DOMAINS:
         _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
-                          competence, domain, win, global_clock, subject_id, handle, cumul, score)
+                            competence, domain, win, global_clock, subject_id, handle, cumul, score)
         _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
-                          synergy, domain, win, global_clock, subject_id, handle, cumul, score)
-        _run_phase_trials('phase_3', P3_TRIALS, p3_schedule, run_phase3_trial,
-                          synergy, domain, win, global_clock, subject_id, handle, cumul, score)
+                            synergy, domain, win, global_clock, subject_id, handle, cumul, score)                        
 
 
     win.close()
