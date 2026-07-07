@@ -132,10 +132,11 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                     factory.border_stims[char_list[idx]].opacity = 1
 
         if choice2_code is not None:
+            factory.set_animal_locked(char_list[preview2_idx], True)
             factory.draw_base_scene(phase_type='phase1')
             kb.draw()
             win.flip()
-            core.wait(0.15)
+            core.wait(0.5)
             rec.log_final(win, {'response': True})
             break
 

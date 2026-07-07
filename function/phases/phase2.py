@@ -39,7 +39,7 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, al
 
 def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
                      stim_trig, choice_trig_base, excluded_idx=None,
-                     freeze_colors=False):
+                     freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False):
     """
     Arrow-key preview + space-to-confirm loop.
 
@@ -76,10 +76,12 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
 
         if confirmed_code is not None:
             factory.border_stims[char_list[confirmed_idx]].opacity = 0
+            if show_confirm_overlay:
+                factory.set_animal_locked(char_list[confirmed_idx], True)
             factory.draw_base_scene(phase_type='phase2')
             kb.draw()
             win.flip()
-            core.wait(0.15)
+            core.wait(confirm_freeze)
             rec.log_final(win, {'response': True})
             return confirmed_idx, confirmed_code, confirmed_rt
 
@@ -146,6 +148,8 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
         excluded_idx=choice1_idx,
         freeze_colors=True,
+        confirm_freeze=0.5,
+        show_confirm_overlay=True,
     )
     if choice2_code is None:
         return None

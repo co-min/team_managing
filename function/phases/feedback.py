@@ -157,6 +157,7 @@ def run_feedback(
     score: float,
     domain: str,
     cumulative_score: float = 0,
+    phase_score: float = 0,
     handle=None,
     trig_code: int = 0,
 ) -> None:
@@ -167,8 +168,12 @@ def run_feedback(
     stims = (
         cfg['build'](win, stage, cfg)
         + _build_monkey_stims(win, stage, cfg, domain=domain, score=score)
-        + [visual.TextStim(win, text=f"누적 점수: {int(cumulative_score)}점",
-                           pos=(0, -160), color="#FFF4F4", height=30, font=FONT, bold=True)]
+        + [
+            visual.TextStim(win, text=f"단계 누적 점수: {int(phase_score)}점",
+                            pos=(0, -145), color="#FFF4F4", height=28, font=FONT, bold=True),
+            visual.TextStim(win, text=f"총 누적 점수: {int(cumulative_score)}점",
+                            pos=(0, -185), color="#FFD700", height=26, font=FONT, bold=True),
+        ]
     )
 
     clock     = core.Clock()
