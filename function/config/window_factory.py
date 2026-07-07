@@ -118,7 +118,7 @@ class VisualObjectFactory:
         animal_h    = int(W * 0.138)   # 중심으로부터 좌우 거리
 
         # 동물 십자 전체를 아래로 내려 도메인 질문과의 간격 확보
-        center_y = -int(H * 0.06)
+        center_y = -int(H * 0.13)
 
         # 상단 동물이 도메인 이미지 하단과 최소 25px 간격 유지 (center_y 반영)
         max_v    = domain_bottom - animal_size // 2 - 25 - center_y
@@ -208,7 +208,7 @@ class VisualObjectFactory:
         self._locked_chars.clear()
         for char_name in self.char_list:
             self.border_stims[char_name].setLineColor('white')
-            self.border_stims[char_name].lineWidth = 2
+            self.border_stims[char_name].lineWidth = 6
             self.border_stims[char_name].opacity = 0
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0

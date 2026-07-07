@@ -5,7 +5,7 @@ from psychopy import core
 
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, P2_TRIALS, P3_TRIALS
+from function.config.settings import P1_TRIALS, P2_TRIALS, P3_TRIALS, INST_PHASE1, INST_PHASE2
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
@@ -146,7 +146,7 @@ def main() -> None:
     cumul = {'total': 0, 'phase': 0}
 
     # instruction phase1
-    show_instructions(win, "")
+    show_instructions(win, INST_PHASE1)
 
     # Phase 1: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
     cumul['phase'] = 0
@@ -155,7 +155,7 @@ def main() -> None:
                             competence, domain, win, global_clock, subject_id, handle, cumul, score)
 
     # instruction phase2
-    show_instructions(win, "")
+    show_instructions(win, INST_PHASE2)
 
     # Phase 2: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
     cumul['phase'] = 0

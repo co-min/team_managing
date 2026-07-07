@@ -58,3 +58,18 @@ SYNERGY_COLOR = {2: 'green', 1.5: 'yellow', 1: 'red'}
 
 COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 
+
+# phase1 instruction
+INST_PHASE1 = """\
+능력 단계: 이번 단계는 능력치가 제시됩니다. 
+4개의 동물 중 두 개를 선택하세요.
+
+[Space] 키를 눌러 시작"""
+
+INST_PHASE2 = """\
+협력 단계: 이번 단계는 협력치가 제시됩니다. 
+4개의 동물 중 두 개를 선택하세요.
+
+[Space] 키를 눌러 시작"""
+
+# phase2 instruction
