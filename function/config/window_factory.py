@@ -45,10 +45,10 @@ class VisualObjectFactory:
         self.win = win
 
         layout = self._compute_layout()
-        av, ah = layout['animal_v'], layout['animal_h']
+        av, ah, cy = layout['animal_v'], layout['animal_h'], layout['center_y']
 
         # 슬롯 위치: 상(0), 하(1), 우(2), 좌(3) — apply_layout에서 항상 덮어씀
-        _slot_defaults = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
+        _slot_defaults = [(0, av + cy), (0, -av + cy), (ah, cy), (-ah, cy)]
 
         if animal_groups is not None:
             # CSV에서 읽은 그룹 정보로 동적으로 char_info 구성
@@ -73,16 +73,17 @@ class VisualObjectFactory:
                 'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
                 'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
                 # Group 2
-                'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
-                'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
-                'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
-                'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+                # 'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
+                # 'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
+                # 'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
+                # 'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
             }
 
         self.char_list = list(animal_groups[0]) if animal_groups else ['duck', 'frog', 'panda', 'rabbit']
 
         # Slot positions: index 0=up, 1=down, 2=right, 3=left
-        self._slot_positions = [(0, av), (0, -av), (ah, 0), (-ah, 0)]
+        self._slot_positions = [(0, av + cy), (0, -av + cy), (ah, cy), (-ah, cy)]
+        self.center_y = cy
 
         # Score block offsets (outer side of each animal, away from center)
         ov = layout['outer_v']
@@ -116,8 +117,11 @@ class VisualObjectFactory:
         animal_v    = int(H * 0.180)   # 중심으로부터 상하 거리
         animal_h    = int(W * 0.138)   # 중심으로부터 좌우 거리
 
-        # 상단 동물이 도메인 이미지 하단과 최소 25px 간격 유지
-        max_v    = domain_bottom - animal_size // 2 - 25
+        # 동물 십자 전체를 아래로 내려 도메인 질문과의 간격 확보
+        center_y = -int(H * 0.06)
+
+        # 상단 동물이 도메인 이미지 하단과 최소 25px 간격 유지 (center_y 반영)
+        max_v    = domain_bottom - animal_size // 2 - 25 - center_y
         animal_v = min(animal_v, max_v)
 
         # 스코어 블록 크기
@@ -126,7 +130,7 @@ class VisualObjectFactory:
 
         # 스코어 블록: 동물 외곽(바깥쪽)에 배치, 도메인과 10px 이상 여백 유지
         outer_v     = animal_size // 2 + 10 + block_h // 2
-        max_outer_v = domain_bottom - animal_v - block_h // 2 - 10
+        max_outer_v = domain_bottom - (animal_v + center_y) - block_h // 2 - 10
         outer_v     = min(outer_v, max_outer_v)
 
         return {
@@ -135,6 +139,7 @@ class VisualObjectFactory:
             'animal_size': animal_size,
             'animal_v':    animal_v,
             'animal_h':    animal_h,
+            'center_y':    center_y,
             'block_size':  (block_w, block_h),
             'outer_v':     outer_v,
         }
@@ -176,7 +181,7 @@ class VisualObjectFactory:
                 win=self.win,
                 pos=info['pos'],
                 width=bz, height=bz,
-                lineWidth=3,
+                lineWidth=12,
                 lineColor= None,
                 fillColor=None,
                 units='pix'

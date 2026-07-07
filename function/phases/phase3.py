@@ -15,10 +15,9 @@ from utils.event_utils import check_escape
 from utils.labjack_trigger import (
     send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
     TRIG_P3_STIMULUS, TRIG_P3_CHOICE1, TRIG_P3_CHOICE2,
+    TRIG_P3_TRIAL_START, TRIG_P3_TRIAL_END,
 )
 
-
-_KB_Y = 0
 
 
 def _run_choice_loop(win, factory, kb, rec, char_list, handle,
@@ -94,8 +93,10 @@ def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, ha
     factory.update_domain(domain)
     factory.reset_ui_states()
 
-    kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
+    kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
     rec = FrameRecorder(frame_log, global_clock)
+
+    send_trigger(handle, TRIG_P3_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
@@ -104,6 +105,7 @@ def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, ha
         TRIG_P3_STIMULUS, TRIG_P3_CHOICE1,
     )
     if choice1_code is None:
+        send_trigger(handle, TRIG_P3_TRIAL_END)
         return None
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
@@ -122,6 +124,8 @@ def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, ha
         locked_border_idx=choice1_idx,
     )
     if choice2_code is None:
+        send_trigger(handle, TRIG_P3_TRIAL_END)
         return None
 
+    send_trigger(handle, TRIG_P3_TRIAL_END)
     return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

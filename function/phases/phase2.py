@@ -16,11 +16,9 @@ from utils.event_utils import check_escape
 from utils.labjack_trigger import (
     send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
     TRIG_P2_STIMULUS, TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
+    TRIG_P2_TRIAL_START, TRIG_P2_TRIAL_END,
 )
 
-
-# Vertical offset (px) below the animal grid where the ArrowKeyboard sits
-_KB_Y = 0
 
 
 def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, also_hide_idx=None):
@@ -123,8 +121,10 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     factory.update_domain(domain)
     factory.reset_ui_states()
 
-    kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
+    kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
     rec = FrameRecorder(frame_log, global_clock)
+
+    send_trigger(handle, TRIG_P2_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
@@ -133,6 +133,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE1,
     )
     if choice1_code is None:
+        send_trigger(handle, TRIG_P2_TRIAL_END)
         return None
 
     # Lock Choice 1; seed synergy colours for Choice 2 resting state
@@ -152,6 +153,8 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         show_confirm_overlay=True,
     )
     if choice2_code is None:
+        send_trigger(handle, TRIG_P2_TRIAL_END)
         return None
 
+    send_trigger(handle, TRIG_P2_TRIAL_END)
     return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

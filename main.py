@@ -18,6 +18,7 @@ from function.phases.phase2 import run_phase2_trial
 from function.phases.phase3 import run_phase3_trial
 from function.phases.feedback import run_feedback
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
+from utils.screen_utils import show_instructions
 
 
 DOMAINS = ['cooking', 'repairing', 'tennis']
@@ -144,11 +145,17 @@ def main() -> None:
     p1_schedule, p2_schedule = _generate_schedules(animal_groups)
     cumul = {'total': 0, 'phase': 0}
 
+    # instruction phase1
+    show_instructions(win, "")
+
     # Phase 1: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
     cumul['phase'] = 0
     for domain in DOMAINS:
         _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
                             competence, domain, win, global_clock, subject_id, handle, cumul, score)
+
+    # instruction phase2
+    show_instructions(win, "")
 
     # Phase 2: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
     cumul['phase'] = 0

@@ -18,11 +18,11 @@ from utils.labjack_trigger import send_trigger_async, reset_trigger
 # ── Layout constants ──────────────────────────────────────────────────────────
 
 _MONKEY_PATH     = "image/monkey.png"
-_MONKEY_SIZE     = (160, 160)
-_MONKEY_POS      = (-130,   0)
-_BUBBLE_POS      = ( 130,   0)
+_MONKEY_SIZE     = (210, 210)
+_MONKEY_POS      = (-170,   0)
+_BUBBLE_POS      = ( 170,   0)
 _BUBBLE_TAIL_POS = (   2,   0)
-_DOMAIN_Y        = 160
+_DOMAIN_Y        = 210
 
 # Shared 7-step color ramp (red → green)
 _RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
@@ -90,13 +90,13 @@ def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict,
     except Exception:
         pass
     stims += [
-        visual.Rect(win, width=260, height=150, pos=_BUBBLE_POS,
+        visual.Rect(win, width=340, height=195, pos=_BUBBLE_POS,
                     fillColor=bubble_color, lineColor=bubble_color),
-        visual.ShapeStim(win, vertices=[(-25, 0), (10, 14), (10, -14)],
+        visual.ShapeStim(win, vertices=[(-33, 0), (13, 18), (13, -18)],
                          pos=_BUBBLE_TAIL_POS, fillColor=bubble_color, lineColor=bubble_color),
         visual.TextStim(win, text=bubble_text,
-                        pos=_BUBBLE_POS, color='#222222', height=24, bold=True,
-                        font=FONT, wrapWidth=240),
+                        pos=_BUBBLE_POS, color='#222222', height=31, bold=True,
+                        font=FONT, wrapWidth=315),
     ]
     return stims
 
@@ -169,10 +169,10 @@ def run_feedback(
         cfg['build'](win, stage, cfg)
         + _build_monkey_stims(win, stage, cfg, domain=domain, score=score)
         + [
-            visual.TextStim(win, text=f"단계 누적 점수: {int(phase_score)}점",
-                            pos=(0, -145), color="#FFF4F4", height=28, font=FONT, bold=True),
+            visual.TextStim(win, text=f"단계 누적 점수: {int(phase_score)}/180점",
+                            pos=(0, -195), color="#FFF4F4", height=29, font=FONT, bold=True),
             visual.TextStim(win, text=f"총 누적 점수: {int(cumulative_score)}점",
-                            pos=(0, -185), color="#FFD700", height=26, font=FONT, bold=True),
+                            pos=(0, -245), color="#FFD700", height=34, font=FONT, bold=True),
         ]
     )
 

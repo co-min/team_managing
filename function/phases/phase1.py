@@ -15,11 +15,9 @@ from utils.event_utils import check_escape
 from utils.labjack_trigger import (
     send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
     TRIG_P1_STIMULUS, TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
+    TRIG_P1_TRIAL_START, TRIG_P1_TRIAL_END,
 )
 
-
-# ArrowKeyboard sits at the centre of the cross, between the 4 animals
-_KB_Y = 0
 
 
 def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle=None):
@@ -51,8 +49,10 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
         score = competence[_CHAR_CODE[char_name]][domain]
         factory.border_stims[char_name].lineColor = _COMPETENCE_COLOR.get(score, 'white')
 
-    kb  = ArrowKeyboard(win, pos=(0, _KB_Y))
+    kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
     rec = FrameRecorder(frame_log, global_clock)
+
+    send_trigger(handle, TRIG_P1_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     kb.reset_colors()
@@ -91,6 +91,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
         if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
             rec.log_final(win, {'response': False})
+            send_trigger(handle, TRIG_P1_TRIAL_END)
             return None
 
         factory.draw_base_scene(phase_type='phase1')
@@ -142,10 +143,12 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
         if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
             rec.log_final(win, {'response': False})
+            send_trigger(handle, TRIG_P1_TRIAL_END)
             return None
 
         factory.draw_base_scene(phase_type='phase1')
         kb.draw()
         rec.flip_and_log(win)
 
+    send_trigger(handle, TRIG_P1_TRIAL_END)
     return {'choice1': choice1_code, 'choice2': choice2_code, 'rt1': rt1, 'rt2': rt2}

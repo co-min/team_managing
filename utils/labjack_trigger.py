@@ -24,43 +24,56 @@ _LATCH_CIO_STATE = 0x01  # CIO0 = HIGH
 # 트리거 코드 상수
 # ============================================================================
 
-TRIG_RESET            = 0
+TRIG_RESET = 0
 
 # =========================================
-# check trial (phase1 – competence)
+# Animal index  A=0, B=1, C=2, D=3
 # =========================================
 
-ANIMAL_IDX        = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
-
-TRIG_P1_STIMULUS  = 0x10   # 0001_0000  stimulus onset
-TRIG_P1_CHOICE1   = 0x14   # 0001_01xx  + ANIMAL_IDX → 0x14~0x17
-TRIG_P1_CHOICE2   = 0x18   # 0001_10xx  + ANIMAL_IDX → 0x18~0x1B
-TRIG_P1_FEEDBACK  = 0x1C   # 0001_1100
+ANIMAL_IDX = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
 
 # =========================================
-# main belief trial (phase2 – synergy)
+# Stimulus onset — phase를 인코딩
 # =========================================
 
-TRIG_P2_STIMULUS  = 0x20   # 0010_0000
-TRIG_P2_CHOICE1   = 0x24   # 0010_01xx  + ANIMAL_IDX → 0x24~0x27
-TRIG_P2_CHOICE2   = 0x28   # 0010_10xx  + ANIMAL_IDX → 0x28~0x2B
-TRIG_P2_FEEDBACK  = 0x2C   # 0010_1100
+TRIG_P1_STIMULUS = 10   # Phase 1 (competence)
+TRIG_P2_STIMULUS = 20   # Phase 2 (synergy)
+TRIG_P3_STIMULUS = 30   # Phase 3 (choice)
 
 # =========================================
-# no-cue choice trial (phase3 – choice task)
+# Choice — phase + choice 순서 + 동물 인코딩
+#   base + ANIMAL_IDX → A=+0, B=+1, C=+2, D=+3
+#
+#   P1: choice1 = 41-44,  choice2 = 45-48
+#   P2: choice1 = 51-54,  choice2 = 55-58
+#   P3: choice1 = 61-64,  choice2 = 65-68
 # =========================================
 
-TRIG_P3_STIMULUS  = 0x30   # 0011_0000  stimulus onset
-TRIG_P3_CHOICE1   = 0x34   # 0011_01xx  + ANIMAL_IDX → 0x34~0x37
-TRIG_P3_CHOICE2   = 0x38   # 0011_10xx  + ANIMAL_IDX → 0x38~0x3B
-TRIG_P3_FEEDBACK  = 0x3C   # 0011_1100
+TRIG_P1_CHOICE1 = 41
+TRIG_P1_CHOICE2 = 45
+TRIG_P2_CHOICE1 = 51
+TRIG_P2_CHOICE2 = 55
+TRIG_P3_CHOICE1 = 61
+TRIG_P3_CHOICE2 = 65
 
 # =========================================
-# trial boundary
+# Feedback — phase를 인코딩
 # =========================================
 
-TRIG_TRIAL_START      = 0x40
-TRIG_TRIAL_END        = 0x41
+TRIG_P1_FEEDBACK = 71
+TRIG_P2_FEEDBACK = 72
+TRIG_P3_FEEDBACK = 73
+
+# =========================================
+# Trial boundary — phase를 인코딩
+# =========================================
+
+TRIG_P1_TRIAL_START = 101
+TRIG_P2_TRIAL_START = 102
+TRIG_P3_TRIAL_START = 103
+TRIG_P1_TRIAL_END   = 201
+TRIG_P2_TRIAL_END   = 202
+TRIG_P3_TRIAL_END   = 203
 
 
 
@@ -124,11 +137,10 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
     """
     t_start = time.perf_counter()
-    label = "SEND" if (handle is not None and _LJM_AVAILABLE) else "SEND(sim)"
-    print(f"[LabJack] {label} code={hex(code)} ({t_start:.4f}s)")
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
+        print(f"[LabJack] SEND code={code} ({t_start:.4f}s)")
         ljm.eWriteName(handle, "EIO_STATE", int(code))
         ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH (rising edge → Natus 캡처)
         while time.perf_counter() - t_start < pulse_s:
@@ -151,11 +163,10 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
 
 def send_trigger_async(handle: int | None, code: int):
     """EIO_STATE + CIO0(latch) 설정 (비블로킹). 리셋은 호출자가 reset_trigger()로 처리."""
-    label = "SEND_ASYNC" if (handle is not None and _LJM_AVAILABLE) else "SEND_ASYNC(sim)"
-    print(f"[LabJack] {label} code={hex(code)} ({time.perf_counter():.4f}s)")
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
+        print(f"[LabJack] SEND_ASYNC code={code} ({time.perf_counter():.4f}s)")
         ljm.eWriteName(handle, "EIO_STATE", int(code))
         ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH
     except Exception as e:

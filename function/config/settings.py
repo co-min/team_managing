@@ -10,10 +10,10 @@ DATA_DIR        = ROOT_DIR / "data"
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
 WINDOW_UNITS     = "pix"
-WINDOW_FULLSCR   = False          # Set True for actual experiment
+WINDOW_FULLSCR   = True          # Set True for actual experiment
 BACKGROUND_COLOR = "#2b2b2b"      # Dark gray matching PDF screenshots
 MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
-SCREEN_NUMBER = 0
+SCREEN_NUMBER = 1
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
 MAX_RESPONSE_TIME =60.0          # seconds; None = unlimited
@@ -46,7 +46,7 @@ P2_TRIALS = 18
 P3_TRIALS = 6
 
 # --- Feed back ---
-FB_TIME = 2
+FB_TIME = 3.5
 
 
 # Animal name -> char_ani code — derived from competence_table.csv (no hardcoding)
