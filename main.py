@@ -111,9 +111,12 @@ def _run_phase_trials(
             fb_score = _get_feedback_score(score, result['choice1'], result['choice2'], domain)
             cumul['total'] += fb_score
             cumul['phase'] += fb_score
+            cumul[domain]  += fb_score
             run_feedback(win, fb_score, domain,
                          cumulative_score=cumul['total'],
                          phase_score=cumul['phase'],
+                         domain_scores={d: cumul[d] for d in DOMAINS},
+                         n_trials_per_domain=n_trials,
                          handle=handle, trig_code=_TRIG_FEEDBACK[phase])
 
         _, record = save_trial_metadata(
@@ -143,7 +146,7 @@ def main() -> None:
     competence, synergy, score, animal_groups = load_all_data()
     get_shared_factory(win, animal_groups)
     p1_schedule, p2_schedule = _generate_schedules(animal_groups)
-    cumul = {'total': 0, 'phase': 0}
+    cumul = {'total': 0, 'phase': 0, 'cooking': 0, 'repairing': 0, 'tennis': 0}
 
     # instruction phase1
     show_instructions(win, INST_PHASE1)
@@ -159,6 +162,8 @@ def main() -> None:
 
     # Phase 2: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
     cumul['phase'] = 0
+    for d in DOMAINS:
+        cumul[d] = 0
     for domain in DOMAINS:
         _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
                             synergy, domain, win, global_clock, subject_id, handle, cumul, score)

@@ -152,12 +152,21 @@ _DOMAIN: dict[str, dict] = {
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
+_DOMAIN_KO = {'cooking': '요리', 'repairing': '수리', 'tennis': '테니스'}
+_DOMAIN_XS = {'cooking': -310, 'repairing': 0, 'tennis': 310}
+
+# Per-domain score ceiling (used for max phase score calculation)
+_MAX_SCORE_PER_TRIAL = max(hi for _, hi in _SCORE_RANGES.values())
+
+
 def run_feedback(
     win: visual.Window,
     score: float,
     domain: str,
     cumulative_score: float = 0,
     phase_score: float = 0,
+    domain_scores: dict = None,
+    n_trials_per_domain: int = 18,
     handle=None,
     trig_code: int = 0,
 ) -> None:
@@ -165,14 +174,27 @@ def run_feedback(
     stage = score_to_stage(score, domain)
     cfg   = _DOMAIN.get(domain, _DOMAIN['cooking'])
 
+    max_phase = n_trials_per_domain * len(_DOMAIN_XS) * _MAX_SCORE_PER_TRIAL
+
+    domain_score_stims = []
+    if domain_scores:
+        for d, x in _DOMAIN_XS.items():
+            val   = int(domain_scores.get(d, 0))
+            color = "#FF9800" if d == domain else "#AAAAAA"
+            domain_score_stims.append(visual.TextStim(
+                win, text=f"{_DOMAIN_KO[d]}: {val}점",
+                pos=(x, -185), color=color, height=27, font=FONT, bold=(d == domain),
+            ))
+
     stims = (
         cfg['build'](win, stage, cfg)
         + _build_monkey_stims(win, stage, cfg, domain=domain, score=score)
+        + domain_score_stims
         + [
-            visual.TextStim(win, text=f"단계 누적 점수: {int(phase_score)}/180점",
-                            pos=(0, -195), color="#FFF4F4", height=29, font=FONT, bold=True),
-            visual.TextStim(win, text=f"총 누적 점수: {int(cumulative_score)}점",
-                            pos=(0, -245), color="#FFD700", height=34, font=FONT, bold=True),
+            visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",
+                            pos=(0, -235), color="#AAAAAA", height=29, font=FONT, bold=False),
+            visual.TextStim(win, text=f"총 점수: {int(cumulative_score)}점",
+                            pos=(0, -282), color="#FFD700", height=34, font=FONT, bold=True),
         ]
     )
 

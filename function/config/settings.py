@@ -10,7 +10,7 @@ DATA_DIR        = ROOT_DIR / "data"
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
 WINDOW_UNITS     = "pix"
-WINDOW_FULLSCR   = True          # Set True for actual experiment
+WINDOW_FULLSCR   = False          # Set True for actual experiment
 BACKGROUND_COLOR = "#2b2b2b"      # Dark gray matching PDF screenshots
 MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 1
@@ -41,8 +41,8 @@ ARROW_RADIUS = 30
 
 
 # --- Trial ---
-P1_TRIALS = 18
-P2_TRIALS = 18
+P1_TRIALS = 2
+P2_TRIALS = 2
 P3_TRIALS = 6
 
 # --- Feed back ---

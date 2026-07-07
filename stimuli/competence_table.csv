@@ -7,8 +7,5 @@ id, char_ani, animal, img_file, cooking, repairing, tennis
 6,B,cat,cat.png,3,2,1
 7,C,chicken,chicken.png,2,3,1
 8,D,cow,cow.png,2,2,2
-9,A,horse,bear.png,1,2,3
-10,B,koala,koala.png,3,2,1
-11,C,lion,lion.png,2,3,1
-12,D,tiger,tiger.png,2,2,2
+
 
