@@ -16,7 +16,7 @@ from function.config.window_factory import get_shared_factory
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
 from function.phases.phase3 import run_phase3_trial
-from function.phases.feedback import run_feedback
+from function.phases.feedback import run_feedback, score_to_stage
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 
 
@@ -108,7 +108,7 @@ def _run_phase_trials(
         fb_score = 0
         if result:
             fb_score = _get_feedback_score(score, result['choice1'], result['choice2'], domain)
-            cumul[domain][phase] += max(1, min(7, int(round(fb_score)) - 2))
+            cumul[domain][phase] += score_to_stage(fb_score, domain)
             run_feedback(win, fb_score, domain,
                          cumulative_score=cumul[domain][phase],
                          handle=handle, trig_code=_TRIG_FEEDBACK[phase])

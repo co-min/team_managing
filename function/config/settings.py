@@ -54,7 +54,7 @@ _comp_df  = pd.read_csv(ROOT_DIR / 'stimuli' / 'competence_table.csv', skipiniti
 CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
 
 # Synergy score -> block fill colour
-SYNERGY_COLOR = {1: 'green', 0: 'yellow', -1: 'red'}
+SYNERGY_COLOR = {2: 'green', 1.5: 'yellow', 1: 'red'}
 
 COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 

@@ -2,13 +2,14 @@
 """
 Feedback phase — domain-specific score display with monkey narrator.
 
-  repairing : 7-segment cleanliness bar  (stage 1=dirty → 7=clean)
-  tennis    : scoreboard text            (3:0 loss → 0:3 win)
+  repairing : cleanliness level text  (stage 1=dirty → 7=clean)
+  tennis    : scoreboard text         (3:0 loss → 0:3 win)
   cooking   : taste-label text
 
-Score mapping:  -3 → stage 1,  0 → stage 4,  +3 → stage 7
+Score normalisation: domain min/max from stimuli/score_table.csv → stage 1–7
 """
 
+import csv
 from psychopy import visual, core
 from function.config.settings import FB_TIME, FONT
 from utils.event_utils import check_escape
@@ -27,8 +28,37 @@ _DOMAIN_Y        = 160
 _RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
 
 
-# ── Domain builders ───────────────────────────────────────────────────────────
+# ── Score ranges from score_table.csv ────────────────────────────────────────
 
+def _load_score_ranges(csv_path: str = "stimuli/score_table.csv") -> dict:
+    ranges  = {d: [float('inf'), float('-inf')] for d in ('cooking', 'repairing', 'tennis')}
+    col_map = {'cooking': 'sc_cooking', 'repairing': 'sc_repairing', 'tennis': 'sc_tennis'}
+    try:
+        with open(csv_path, newline='', encoding='utf-8') as f:
+            for row in csv.DictReader(f, skipinitialspace=True):
+                for domain, col in col_map.items():
+                    val = float(row[col])
+                    if val < ranges[domain][0]:
+                        ranges[domain][0] = val
+                    if val > ranges[domain][1]:
+                        ranges[domain][1] = val
+    except Exception:
+        return {'cooking': (3.0, 10.0), 'repairing': (4.0, 10.0), 'tennis': (2.0, 8.0)}
+    return {d: (v[0], v[1]) for d, v in ranges.items()}
+
+
+_SCORE_RANGES = _load_score_ranges()
+
+
+def score_to_stage(score: float, domain: str) -> int:
+    """Normalise raw score to stage 1–7 using domain min/max from score_table."""
+    lo, hi = _SCORE_RANGES.get(domain, (3.0, 9.0))
+    if hi == lo:
+        return 4
+    return max(1, min(7, int(1 + (score - lo) / (hi - lo) * 6 + 0.5)))
+
+
+# ── Domain builders ───────────────────────────────────────────────────────────
 
 
 def _build_text_stims(win: visual.Window, stage: int, cfg: dict) -> list:
@@ -41,8 +71,18 @@ def _build_text_stims(win: visual.Window, stage: int, cfg: dict) -> list:
     ]
 
 
-def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict) -> list:
-    bubble_text = cfg['monkey'][stage - 1]
+def _monkey_text(domain: str, score: float, stage: int, cfg: dict) -> str:
+    """Compose bubble text: actual score for cooking/repairing, game score for tennis."""
+    comment = cfg['monkey'][stage - 1]
+    if domain == 'tennis':
+        return comment
+    _, max_score = _SCORE_RANGES.get(domain, (0.0, 10.0))
+    return f"{int(max_score)}점 만점에 {score:g}점이야.\n{comment}"
+
+
+def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict,
+                        domain: str = '', score: float = 0.0) -> list:
+    bubble_text  = _monkey_text(domain, score, stage, cfg)
     bubble_color = _RESULT_COLORS[stage - 1]
     stims = []
     try:
@@ -61,25 +101,25 @@ def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict) -> list:
     return stims
 
 
-# ── Domain configuration (data + builder reference) ──────────────────────────
+# ── Domain configuration ──────────────────────────────────────────────────────
 
 _DOMAIN: dict[str, dict] = {
     'repairing': {
-        'build': _build_text_stims,
+        'build':  _build_text_stims,
         'monkey': [
-            "7점 만점에 1점이야.\n아직 많이 지저분해...",
-            "7점 만점에 2점이야.\n꽤 지저분해",
-            "7점 만점에 3점이야.\n조금 지저분해",
-            "7점 만점에 4점이야.\n청소 상태가 보통이야",
-            "7점 만점에 5점으로\n조금 깨끗해!",
-            "7점 만점에 6점으로\n꽤 깨끗해!",
-            "7점 만점에 7점으로\n완벽하게 깨끗해!",
+            "아직 많이 지저분해...",
+            "꽤 지저분해",
+            "조금 지저분해",
+            "청소 상태가 보통이야",
+            "조금 깨끗해!",
+            "꽤 깨끗해!",
+            "완벽하게 깨끗해!",
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
-            },
+    },
     'tennis': {
-        'build': _build_text_stims,
+        'build':  _build_text_stims,
         'monkey': [
             "3 : 0이야.\n완패야...",
             "3 : 1이야.\n아슬아슬하게 졌어",
@@ -94,15 +134,15 @@ _DOMAIN: dict[str, dict] = {
         'stims':  [],
     },
     'cooking': {
-        'build': _build_text_stims,
+        'build':  _build_text_stims,
         'monkey': [
-            "7점 만점에 1점이야.\n이 요리는 맛없어...",
-            "7점 만점에 2점이야.\n이 요리는 별로야",
-            "7점 만점에 3점이야.\n조금 아쉬워",
-            "7점 만점에 4점이야.\n이 요리는 보통이야",
-            "7점 만점에 5점으로\n맛있어!",
-            "7점 만점에 6점으로\n정말 맛있어!",
-            "7점 만점에 7점으로\n최고야!",
+            "이 요리는 맛없어...",
+            "이 요리는 별로야",
+            "조금 아쉬워",
+            "이 요리는 보통이야",
+            "맛있어!",
+            "정말 맛있어!",
+            "최고야!",
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -121,14 +161,14 @@ def run_feedback(
     trig_code: int = 0,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
-    stage = max(1, min(7, int(round(score)) - 2))
+    stage = score_to_stage(score, domain)
     cfg   = _DOMAIN.get(domain, _DOMAIN['cooking'])
 
     stims = (
         cfg['build'](win, stage, cfg)
-        + _build_monkey_stims(win, stage, cfg)
+        + _build_monkey_stims(win, stage, cfg, domain=domain, score=score)
         + [visual.TextStim(win, text=f"누적 점수: {int(cumulative_score)}점",
-                           pos=(0, -160), color="#FFF4F4", height=30, font=FONT, bold = True)]
+                           pos=(0, -160), color="#FFF4F4", height=30, font=FONT, bold=True)]
     )
 
     clock     = core.Clock()
