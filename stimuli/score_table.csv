@@ -1,7 +1,7 @@
 pair_id, char1, char2, sc_cooking, sc_repairing, sc_tennis
 1,A,B,6,6,6
-2,A,C,6,10,8
-3,A,D,3,4,5
-4,B,C,5,5,2
-5,B,D,10,8,6
+2,A,C,3,5,4
+3,A,D,6,8,10
+4,B,C,10,10,4
+5,B,D,5,4,3
 6,C,D,6,7.5,4.5
