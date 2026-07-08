@@ -60,7 +60,7 @@ class VisualObjectFactory:
                         'img': f'image/objectives/{animal}.png',
                     }
         else:
-            # 폴백: 하드코딩된 12마리 (하위 호환성 유지)
+            # 폴백: 하드코딩된 24마리 6그룹 (하위 호환성 유지)
             self.char_info = {
                 # Group 0
                 'duck':    {'pos': _slot_defaults[0], 'img': 'image/objectives/duck.png'},
@@ -73,10 +73,25 @@ class VisualObjectFactory:
                 'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
                 'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
                 # Group 2
-                # 'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
-                # 'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
-                # 'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
-                # 'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+                'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
+                'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
+                'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
+                'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+                # Group 3
+                'deer':     {'pos': _slot_defaults[0], 'img': 'image/objectives/deer.png'},
+                'dog':      {'pos': _slot_defaults[1], 'img': 'image/objectives/dog.png'},
+                'elephant': {'pos': _slot_defaults[2], 'img': 'image/objectives/elephant.png'},
+                'fish':     {'pos': _slot_defaults[3], 'img': 'image/objectives/fish.png'},
+                # Group 4
+                'fox':   {'pos': _slot_defaults[0], 'img': 'image/objectives/fox.png'},
+                'hippo': {'pos': _slot_defaults[1], 'img': 'image/objectives/hippo.png'},
+                'kappa': {'pos': _slot_defaults[2], 'img': 'image/objectives/kappa.png'},
+                'mouse': {'pos': _slot_defaults[3], 'img': 'image/objectives/mouse.png'},
+                # Group 5
+                'otter':   {'pos': _slot_defaults[0], 'img': 'image/objectives/otter.png'},
+                'seal':    {'pos': _slot_defaults[1], 'img': 'image/objectives/seal.png'},
+                'sealion': {'pos': _slot_defaults[2], 'img': 'image/objectives/sealion.png'},
+                'sheep':   {'pos': _slot_defaults[3], 'img': 'image/objectives/sheep.png'},
             }
 
         self.char_list = list(animal_groups[0]) if animal_groups else ['duck', 'frog', 'panda', 'rabbit']

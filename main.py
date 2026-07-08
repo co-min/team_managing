@@ -5,7 +5,7 @@ from psychopy import core
 
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, P2_TRIALS, P3_TRIALS, INST_PHASE1, INST_PHASE2
+from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
@@ -23,50 +23,42 @@ from utils.screen_utils import show_instructions
 
 DOMAINS = ['cooking', 'repairing', 'tennis']
 
+# Block 1/3/5: Synergy Infer, Competency Shown  → run_phase1_trial + competence data
+# Block 2/4/6: Synergy Shown, Competency Infer  → run_phase2_trial + synergy data
+BLOCK_PHASES = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
+
 _SCHEDULE_SEED = 42
 _TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK, 'phase_3': TRIG_P3_FEEDBACK}
 
 
-def _generate_schedules(animal_groups):
+def _generate_block_schedules(animal_groups):
     """
-    Build per-domain, per-phase lists of animal orderings.
+    Build per-block trial schedules (one schedule per animal group).
 
-    animal_groups[g][s] = the s-th char_ani slot's animal in group g.
-    Each slot (A/B/C/D) independently cycles through its n_g animals
-    in balanced blocks, so every animal appears equally often.
-
-    Block structure: n_trials // n_g blocks, each block of n_g trials
-    contains each slot-animal exactly once (shuffled within the block).
-    Position order within each trial is also randomised.
+    Each block uses a single animal group for all P1_TRIALS (18) trials.
+    Domains are distributed evenly (6 per domain) and shuffled.
+    char_order is a random permutation of the block's 4 animals per trial.
 
     Returns
     -------
-    p1_schedule : {domain: [char_order_t0, ...]}  length = P1_TRIALS
-    p2_schedule : {domain: [char_order_t0, ...]}  length = P2_TRIALS
+    list of len(animal_groups) lists, each containing P1_TRIALS dicts:
+        {'domain': str, 'char_order': list[str]}
     """
     rng      = random.Random(_SCHEDULE_SEED)
-    n_g      = len(animal_groups)     # number of groups (3)
-    n_s      = len(animal_groups[0])  # number of char_ani slots (4)
+    n_trials = P1_TRIALS  # 18
 
-    # per_slot[s] = [animal_for_slot_s_in_group_0, group_1, group_2]
-    per_slot = [[animal_groups[g][s] for g in range(n_g)] for s in range(n_s)]
+    schedules = []
+    for group in animal_groups:
+        domain_seq = DOMAINS * (n_trials // len(DOMAINS))
+        rng.shuffle(domain_seq)
 
-    def make_schedule(n_trials):
-        order = []
-        for _ in range(n_trials // n_g):
-            # Each slot shuffles its n_g animals independently for this block
-            shuffled = [rng.sample(per_slot[s], n_g) for s in range(n_s)]
-            for t in range(n_g):
-                trial = [shuffled[s][t] for s in range(n_s)]
-                rng.shuffle(trial)   # randomise up/down/left/right positions
-                order.append(trial)
-        return order
+        block_sched = [
+            {'domain': d, 'char_order': rng.sample(group, len(group))}
+            for d in domain_seq
+        ]
+        schedules.append(block_sched)
 
-    p1 = {d: make_schedule(P1_TRIALS) for d in DOMAINS}
-    p2 = {d: make_schedule(P2_TRIALS) for d in DOMAINS}
-    # p3 = {d: make_schedule(P3_TRIALS) for d in DOMAINS}
-    # return p1, p2, p3
-    return p1, p2
+    return schedules
 
 
 def _persist_trial(subject_id, record, rows, save_dir):
@@ -80,29 +72,29 @@ def _get_feedback_score(score, c1, c2, domain):
     return score.get(tuple(sorted([c1, c2])), {}).get(domain, 0)
 
 
-def _run_phase_trials(
-    phase, n_trials, schedule, run_fn, data_dict,
-    domain, win, global_clock, subject_id, handle, cumul, score,
+def _run_block_trials(
+    block_i, phase, block_schedule, run_fn, data_dict,
+    win, global_clock, subject_id, handle, cumul, score,
 ):
     """
-    Run all trials for one phase/domain pair.
+    Run all 18 trials for one block.
 
-    File I/O for each trial is offloaded to a background thread so that
-    saving overlaps with the following ITI instead of blocking it.
-    The thread is joined after the ITI (before the next trial begins),
-    guaranteeing writes complete before the next save starts.
+    block_schedule : list of {'domain': str, 'char_order': list[str]}
+    File I/O is offloaded to a background thread during the following ITI.
     """
-    save_thread = None
+    save_thread  = None
+    n_per_domain = P1_TRIALS // len(DOMAINS)  # 6
 
-    for trial_i in range(n_trials):
-        char_order   = schedule[domain][trial_i]
-        stim_pair_id = f"{domain}_{phase}_t{trial_i:02d}"
-        frame_log    = make_frame_log(phase=phase, trial_id=trial_i, stim_pair_id=stim_pair_id)
+    for trial_i, trial_info in enumerate(block_schedule):
+        domain     = trial_info['domain']
+        char_order = trial_info['char_order']
+        stim_pair_id = f"block{block_i}_{phase}_t{trial_i:02d}"
+        frame_log  = make_frame_log(phase=phase, trial_id=trial_i, stim_pair_id=stim_pair_id)
 
-        run_gaussian_iti(win, global_clock, frame_log)  # saves from previous trial run here
+        run_gaussian_iti(win, global_clock, frame_log)
 
         if save_thread:
-            save_thread.join()  # must finish before this trial's saves can start
+            save_thread.join()
 
         result = run_fn(win, global_clock, frame_log, data_dict, domain, char_order, handle)
 
@@ -116,7 +108,7 @@ def _run_phase_trials(
                          cumulative_score=cumul['total'],
                          phase_score=cumul['phase'],
                          domain_scores={d: cumul[d] for d in DOMAINS},
-                         n_trials_per_domain=n_trials,
+                         n_trials_per_domain=n_per_domain,
                          handle=handle, trig_code=_TRIG_FEEDBACK[phase])
 
         _, record = save_trial_metadata(
@@ -133,7 +125,7 @@ def _run_phase_trials(
         save_thread.start()
 
     if save_thread:
-        save_thread.join()  # last trial's saves must complete before phase ends
+        save_thread.join()
 
 
 def main() -> None:
@@ -145,29 +137,29 @@ def main() -> None:
 
     competence, synergy, score, animal_groups = load_all_data()
     get_shared_factory(win, animal_groups)
-    p1_schedule, p2_schedule = _generate_schedules(animal_groups)
+    block_schedules = _generate_block_schedules(animal_groups)
     cumul = {'total': 0, 'phase': 0, 'cooking': 0, 'repairing': 0, 'tennis': 0}
 
-    # instruction phase1
-    show_instructions(win, INST_PHASE1)
+    total_blocks = len(BLOCK_PHASES)
+    for block_i, (phase, block_sched) in enumerate(zip(BLOCK_PHASES, block_schedules)):
+        block_fmt = {'block_num': block_i + 1, 'total_blocks': total_blocks}
+        if phase == 'phase_1':
+            run_fn    = run_phase1_trial
+            data_dict = competence
+            show_instructions(win, INST_PHASE1.format(**block_fmt))
+        else:
+            run_fn    = run_phase2_trial
+            data_dict = synergy
+            show_instructions(win, INST_PHASE2.format(**block_fmt))
 
-    # Phase 1: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
-    cumul['phase'] = 0
-    for domain in DOMAINS:
-        _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
-                            competence, domain, win, global_clock, subject_id, handle, cumul, score)
+        cumul['phase'] = 0
+        for d in DOMAINS:
+            cumul[d] = 0
 
-    # instruction phase2
-    show_instructions(win, INST_PHASE2)
-
-    # Phase 2: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
-    cumul['phase'] = 0
-    for d in DOMAINS:
-        cumul[d] = 0
-    for domain in DOMAINS:
-        _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
-                            synergy, domain, win, global_clock, subject_id, handle, cumul, score)
-
+        _run_block_trials(
+            block_i, phase, block_sched, run_fn, data_dict,
+            win, global_clock, subject_id, handle, cumul, score,
+        )
 
     win.close()
     core.quit()

@@ -10,7 +10,7 @@ DATA_DIR        = ROOT_DIR / "data"
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
 WINDOW_UNITS     = "pix"
-WINDOW_FULLSCR   = True          # Set True for actual experiment
+WINDOW_FULLSCR   = False          # Set True for actual experiment
 BACKGROUND_COLOR = "#2b2b2b"      # Dark gray matching PDF screenshots
 MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 1
@@ -41,8 +41,8 @@ ARROW_RADIUS = 30
 
 
 # --- Trial ---
-P1_TRIALS = 18
-P2_TRIALS = 18
+P1_TRIALS = 8
+P2_TRIALS = 8
 P3_TRIALS = 6
 
 # --- Feed back ---
@@ -59,15 +59,19 @@ SYNERGY_COLOR = {2: 'green', 1.5: 'yellow', 1: 'red'}
 COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 
 
-# phase1 instruction
+# phase1 instruction  ({block_num}/{total_blocks} filled in at runtime)
 INST_PHASE1 = """\
-이번 단계에서는 능력치가 보입니다. 
+[{block_num} / {total_blocks} 블록]
+
+이번 단계에서는 능력치가 보입니다.
 협력도를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.
 
 [Space] 키를 눌러 시작"""
 
 INST_PHASE2 = """\
-이번 단계에서는 협력도가 보입니다. 
+[{block_num} / {total_blocks} 블록]
+
+이번 단계에서는 협력도가 보입니다.
 능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요
 
 [Space] 키를 눌러 시작"""

@@ -30,7 +30,7 @@ def load_all_data():
     synergy = {}
     for _, row in syn_df.iterrows():
         key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
-        synergy[key] = int(row['synergy_score'])
+        synergy[key] = float(row['synergy_score'])
 
     score_df = pd.read_csv('stimuli/score_table.csv', skipinitialspace=True)
     score = {}
