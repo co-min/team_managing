@@ -1,11 +1,9 @@
 import random
 import threading
-
 from psychopy import core
-
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2, DOMAINS
+from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2, DOMAINS, DOMAIN_ORDER
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
@@ -47,8 +45,12 @@ def _generate_block_schedules(animal_groups):
 
     schedules = []
     for group in animal_groups:
-        domain_seq = DOMAINS * (n_trials // len(DOMAINS))
-        rng.shuffle(domain_seq)
+        n_per = n_trials // len(DOMAINS)
+        if DOMAIN_ORDER == 'sequential':
+            domain_seq = [d for d in DOMAINS for _ in range(n_per)]
+        else:
+            domain_seq = DOMAINS * n_per
+            rng.shuffle(domain_seq)
 
         block_sched = [
             {'domain': d, 'char_order': rng.sample(group, len(group))}

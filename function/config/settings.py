@@ -9,14 +9,19 @@ DATA_DIR        = ROOT_DIR / "data"
 # ─── Mode ─────────────────────────────────────────────────────────────────────
 # MODE 1 : competence_table.csv       + score_table.csv        (3 domains)
 # MODE 2 : competence_table_domain2.csv + score_table_domain2.csv (2 domains)
-MODE = 2
+MISSION_MODE = 2
 
-if MODE == 1:
+# DOMAIN_ORDER: trial 내 domain 제시 순서
+#   'random'     — seed 고정 랜덤 셔플 
+#   'sequential' — DOMAINS 순서대로 묶음
+DOMAIN_ORDER = 'random'
+
+if MISSION_MODE == 1:
     COMPETENCE_CSV   = ROOT_DIR / 'stimuli' / 'competence_table.csv'
     SCORE_CSV        = ROOT_DIR / 'stimuli' / 'score_table.csv'
     DOMAINS          = ['cooking', 'repairing', 'tennis']
-    P1_TRIALS        = 16
-    P2_TRIALS        = 16
+    P1_TRIALS        = 18
+    P2_TRIALS        = 18
     P3_TRIALS        = 6
     COMPETENCE_COLOR = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}          # 3-level
 else:

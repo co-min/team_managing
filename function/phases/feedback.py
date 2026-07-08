@@ -23,6 +23,8 @@ _BUBBLE_POS      = ( 170,   0)
 _BUBBLE_TAIL_POS = (   2,   0)
 _DOMAIN_Y        = 210
 
+_monkey_stim_cache: dict = {}
+
 # Shared 7-step color ramp (red → green)
 _RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
 
@@ -77,15 +79,26 @@ def _monkey_text(score: float, stage: int, cfg: dict, domain: str = '') -> str:
     return f"{max_score}점 만점에 {score:g}점이야.\n{comment}"
 
 
+def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
+    wid = id(win)
+    if wid not in _monkey_stim_cache:
+        try:
+            _monkey_stim_cache[wid] = visual.ImageStim(
+                win, image=_MONKEY_PATH, size=_MONKEY_SIZE, pos=_MONKEY_POS
+            )
+        except Exception:
+            _monkey_stim_cache[wid] = None
+    return _monkey_stim_cache[wid]
+
+
 def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict,
                         score: float = 0.0, domain: str = '') -> list:
     bubble_text  = _monkey_text(score, stage, cfg, domain)
     bubble_color = _RESULT_COLORS[stage - 1]
     stims = []
-    try:
-        stims.append(visual.ImageStim(win, image=_MONKEY_PATH, size=_MONKEY_SIZE, pos=_MONKEY_POS))
-    except Exception:
-        pass
+    monkey = _get_monkey_stim(win)
+    if monkey is not None:
+        stims.append(monkey)
     stims += [
         visual.Rect(win, width=340, height=195, pos=_BUBBLE_POS,
                     fillColor=bubble_color, lineColor=bubble_color),
