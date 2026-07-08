@@ -71,18 +71,15 @@ def _build_text_stims(win: visual.Window, stage: int, cfg: dict) -> list:
     ]
 
 
-def _monkey_text(domain: str, score: float, stage: int, cfg: dict) -> str:
-    """Compose bubble text: actual score for cooking/repairing, game score for tennis."""
+def _monkey_text(score: float, stage: int, cfg: dict) -> str:
+    """Compose bubble text: score out of 10 for all domains."""
     comment = cfg['monkey'][stage - 1]
-    if domain == 'tennis':
-        return comment
-    _, max_score = _SCORE_RANGES.get(domain, (0.0, 10.0))
-    return f"{int(max_score)}점 만점에 {score:g}점이야.\n{comment}"
+    return f"10점 만점에 {score:g}점이야.\n{comment}"
 
 
 def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict,
-                        domain: str = '', score: float = 0.0) -> list:
-    bubble_text  = _monkey_text(domain, score, stage, cfg)
+                        score: float = 0.0) -> list:
+    bubble_text  = _monkey_text(score, stage, cfg)
     bubble_color = _RESULT_COLORS[stage - 1]
     stims = []
     try:
@@ -121,15 +118,14 @@ _DOMAIN: dict[str, dict] = {
     'tennis': {
         'build':  _build_text_stims,
         'monkey': [
-            "3 : 0이야.\n완패야...",
-            "3 : 1이야.\n아슬아슬하게 졌어",
-            "3 : 2야.\n패배야",
-            "3 : 3이야.\n무승부야",
-            "2 : 3이야.\n아슬아슬하게 이겼어!",
-            "1 : 3이야.\n승리야!",
-            "0 : 3이야.\n완벽한 승리야!",
+            "완패야...",
+            "아슬아슬하게 졌어",
+            "패배야",
+            "무승부야",
+            "아슬아슬하게 이겼어!",
+            "승리야!",
+            "완벽한 승리야!",
         ],
-        'scores': ["3 : 0", "3 : 1", "3 : 2", "3 : 3", "2 : 3", "1 : 3", "0 : 3"],
         'colors': _RESULT_COLORS,
         'stims':  [],
     },
@@ -188,7 +184,7 @@ def run_feedback(
 
     stims = (
         cfg['build'](win, stage, cfg)
-        + _build_monkey_stims(win, stage, cfg, domain=domain, score=score)
+        + _build_monkey_stims(win, stage, cfg, score=score)
         + domain_score_stims
         + [
             visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",

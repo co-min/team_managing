@@ -41,8 +41,8 @@ ARROW_RADIUS = 30
 
 
 # --- Trial ---
-P1_TRIALS = 18
-P2_TRIALS = 18
+P1_TRIALS = 2
+P2_TRIALS = 2
 P3_TRIALS = 6
 
 # --- Feed back ---
@@ -61,14 +61,14 @@ COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 
 # phase1 instruction
 INST_PHASE1 = """\
-능력 단계: 이번 단계는 능력치가 제시됩니다. 
-4개의 동물 중 두 개를 선택하세요.
+이번 단계에서는 능력치가 보입니다. 
+협력도를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.
 
 [Space] 키를 눌러 시작"""
 
 INST_PHASE2 = """\
-협력 단계: 이번 단계는 협력치가 제시됩니다. 
-4개의 동물 중 두 개를 선택하세요.
+이번 단계에서는 협력도가 보입니다. 
+능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요
 
 [Space] 키를 눌러 시작"""
 

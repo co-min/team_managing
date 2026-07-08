@@ -42,12 +42,11 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     factory.apply_layout(char_order)
     char_list = factory.char_list
 
-    # Reset and colour borders by individual competence scores
+    # Reset borders to neutral – competency is hidden during choice 1
     factory.update_domain(domain)
     factory.reset_ui_states()
     for char_name in char_list:
-        score = competence[_CHAR_CODE[char_name]][domain]
-        factory.border_stims[char_name].lineColor = _COMPETENCE_COLOR.get(score, 'white')
+        factory.border_stims[char_name].lineColor = 'white'
 
     kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
     rec = FrameRecorder(frame_log, global_clock)
@@ -79,9 +78,12 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
                     preview_idx = idx
                     for name in char_list:
                         factory.border_stims[name].opacity = 0
-                    factory.border_stims[char_list[idx]].opacity = 1
 
         if choice1_code is not None:
+            # Set competency colors silently so choice 2 can reveal them via hover
+            for char_name in char_list:
+                score = competence[_CHAR_CODE[char_name]][domain]
+                factory.border_stims[char_name].lineColor = _COMPETENCE_COLOR.get(score, 'white')
             factory.draw_base_scene(phase_type='phase1')
             kb.draw()
             win.flip()
