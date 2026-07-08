@@ -73,19 +73,20 @@ def score_to_stage(score: float, domain: str, score_ranges: dict = None) -> int:
 # ── Domain builders ───────────────────────────────────────────────────────────
 
 
-def _build_text_stims(win: visual.Window, stage: int, cfg: dict) -> list:
+def _build_text_stims(win: visual.Window, stage: int, domain_cfg: dict) -> list:
     """Generic builder for domains described by a list of stim specs."""
-    idx, color = stage - 1, cfg['colors'][stage - 1]
+    stage_idx   = stage - 1
+    stage_color = domain_cfg['colors'][stage_idx]
     return [
-        visual.TextStim(win, text=cfg[s['key']][idx], pos=s['pos'],
-                        color=color, height=s['height'], bold=True, font=FONT)
-        for s in cfg['stims']
+        visual.TextStim(win, text=domain_cfg[s['key']][stage_idx], pos=s['pos'],
+                        color=stage_color, height=s['height'], bold=True, font=FONT)
+        for s in domain_cfg['stims']
     ]
 
 
-def _monkey_text(score: float, stage: int, cfg: dict, domain: str = '',
+def _monkey_text(score: float, stage: int, domain_cfg: dict, domain: str = '',
                  score_ranges: dict = None) -> str:
-    comment = cfg['monkey'][stage - 1]
+    comment = domain_cfg['monkey'][stage - 1]
     ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
     _, hi = ranges.get(domain, (0.0, 10.0))
     max_score = int(hi) if hi == int(hi) else hi
@@ -104,10 +105,10 @@ def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
     return _monkey_stim_cache[wid]
 
 
-def _build_monkey_stims(win: visual.Window, stage: int, cfg: dict,
+def _build_monkey_stims(win: visual.Window, stage: int, domain_cfg: dict,
                         score: float = 0.0, domain: str = '',
                         score_ranges: dict = None) -> list:
-    bubble_text  = _monkey_text(score, stage, cfg, domain, score_ranges)
+    bubble_text  = _monkey_text(score, stage, domain_cfg, domain, score_ranges)
     bubble_color = _RESULT_COLORS[stage - 1]
     stims = []
     monkey = _get_monkey_stim(win)
@@ -179,9 +180,9 @@ _DOMAIN_KO_ALL = {'cooking': '요리', 'repairing': '수리', 'tennis': '테니�
 _DOMAIN_KO = {d: _DOMAIN_KO_ALL[d] for d in DOMAINS}
 
 def _make_domain_xs(domains: list) -> dict:
-    n    = len(domains)
-    step = 155 if n <= 2 else 210
-    return {d: int(-step * (n - 1) / 2 + i * step) for i, d in enumerate(domains)}
+    n_domains = len(domains)
+    x_spacing = 155 if n_domains <= 2 else 210
+    return {d: int(-x_spacing * (n_domains - 1) / 2 + i * x_spacing) for i, d in enumerate(domains)}
 
 _DOMAIN_XS = _make_domain_xs(DOMAINS)
 
@@ -203,13 +204,13 @@ def run_feedback(
     score_ranges: dict = None,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
-    active_ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
-    stage = score_to_stage(score, domain, active_ranges)
-    cfg   = _DOMAIN.get(domain, _DOMAIN['cooking'])
+    active_ranges  = score_ranges if score_ranges is not None else _SCORE_RANGES
+    stage          = score_to_stage(score, domain, active_ranges)
+    domain_cfg     = _DOMAIN.get(domain, _DOMAIN['cooking'])
 
     active_domains = block_domains if block_domains is not None else DOMAINS
-    domain_xs = _make_domain_xs(active_domains)
-    domain_ko = {d: _DOMAIN_KO_ALL[d] for d in active_domains}
+    domain_xs      = _make_domain_xs(active_domains)
+    domain_ko      = {d: _DOMAIN_KO_ALL[d] for d in active_domains}
     max_score_per_trial = max(hi for _, hi in active_ranges.values())
     max_phase = n_trials_per_domain * len(domain_xs) * max_score_per_trial
 
@@ -224,26 +225,26 @@ def run_feedback(
             ))
 
     stims = (
-        cfg['build'](win, stage, cfg)
-        + _build_monkey_stims(win, stage, cfg, score=score, domain=domain,
+        domain_cfg['build'](win, stage, domain_cfg)
+        + _build_monkey_stims(win, stage, domain_cfg, score=score, domain=domain,
                               score_ranges=active_ranges)
         + domain_score_stims
         + [
             visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",
                             pos=(0, -235), color="#AAAAAA", height=29, font=FONT, bold=False),
-            visual.TextStim(win, text=f"총 점수: {int(cumulative_score)}점",
+            visual.TextStim(win, text=f"총 점수: {float(cumulative_score)}점",
                             pos=(0, -282), color="#FFD700", height=34, font=FONT, bold=True),
         ]
     )
 
-    clock     = core.Clock()
-    trig_sent = False
+    clock           = core.Clock()
+    trigger_sent    = False
     while clock.getTime() < FB_TIME:
         for stim in stims:
             stim.draw()
-        if not trig_sent:
+        if not trigger_sent:
             win.callOnFlip(send_trigger_async, handle, trig_code)
             win.callOnFlip(reset_trigger, handle)
-            trig_sent = True
+            trigger_sent = True
         win.flip()
         check_escape(win)

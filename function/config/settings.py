@@ -15,7 +15,7 @@ MISSION_MODE = 3
 # DOMAIN_ORDER: trial 내 domain 제시 순서
 #   'random'     — seed 고정 랜덤 셔플
 #   'sequential' — DOMAINS 순서대로 묶음
-DOMAIN_ORDER = 'random'
+DOMAIN_ORDER = 'sequential'
 
 if MISSION_MODE == 1:
     COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'

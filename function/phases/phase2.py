@@ -1,5 +1,5 @@
 """
-Phase 2 – Synergy Task 
+Phase 2 – Synergy Task
 
 Trial flow
 ----------
@@ -35,7 +35,7 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, al
         factory.block_stims[char_name].opacity = 1
 
 
-def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
+def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handle,
                      stim_trig, choice_trig_base, excluded_idx=None,
                      freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False):
     """
@@ -44,15 +44,15 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
     freeze_colors=True: synergy bar colors are not updated on arrow-key navigation.
     Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
     """
-    clock = core.Clock()
-    preview_idx = None
-    _stim_sent = False
+    response_clock = core.Clock()
+    preview_idx    = None
+    stim_triggered = False
 
     while True:
         check_escape(win)
         confirmed_idx = confirmed_code = confirmed_rt = None
 
-        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+        for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space'], timeStamped=response_clock):
             if pressed == 'space':
                 if preview_idx is not None:
                     confirmed_idx  = preview_idx
@@ -60,40 +60,40 @@ def _run_choice_loop(win, factory, kb, rec, char_list, synergy, handle,
                     confirmed_rt   = t
                     send_trigger(handle, choice_trig_base + ANIMAL_IDX[confirmed_code])
             else:
-                kb.reset_colors()
-                idx = kb.select(pressed, excluded_idx=excluded_idx)
-                if idx is not None:
-                    preview_idx = idx
+                keyboard.reset_colors()
+                arrow_idx = keyboard.select(pressed, excluded_idx=excluded_idx)
+                if arrow_idx is not None:
+                    preview_idx = arrow_idx
                     if not freeze_colors:
                         _apply_synergy_colors(
-                            factory, char_list, idx, _CHAR_CODE[char_list[idx]], synergy,
+                            factory, char_list, arrow_idx, _CHAR_CODE[char_list[arrow_idx]], synergy,
                             also_hide_idx=excluded_idx,
                         )
                     # 바깥 하얀색 테두리
-                    factory.border_stims[char_list[idx]].opacity = 0
+                    factory.border_stims[char_list[arrow_idx]].opacity = 0
 
         if confirmed_code is not None:
             factory.border_stims[char_list[confirmed_idx]].opacity = 0
             if show_confirm_overlay:
                 factory.set_animal_locked(char_list[confirmed_idx], True)
             factory.draw_base_scene(phase_type='phase2')
-            kb.draw()
+            keyboard.draw()
             win.flip()
             core.wait(confirm_freeze)
-            rec.log_final(win, {'response': True})
+            recorder.log_final(win, {'response': True})
             return confirmed_idx, confirmed_code, confirmed_rt
 
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
+        if MAX_RESPONSE_TIME and response_clock.getTime() > MAX_RESPONSE_TIME:
+            recorder.log_final(win, {'response': False})
             return None, None, None
 
         factory.draw_base_scene(phase_type='phase2')
-        kb.draw()
-        if not _stim_sent:
+        keyboard.draw()
+        if not stim_triggered:
             win.callOnFlip(send_trigger_async, handle, stim_trig)
             win.callOnFlip(reset_trigger, handle)
-            _stim_sent = True
-        rec.flip_and_log(win)
+            stim_triggered = True
+        recorder.flip_and_log(win)
 
 
 def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle=None):
@@ -121,15 +121,15 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     factory.update_domain(domain)
     factory.reset_ui_states()
 
-    kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
-    rec = FrameRecorder(frame_log, global_clock)
+    keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
+    recorder = FrameRecorder(frame_log, global_clock)
 
     send_trigger(handle, TRIG_P2_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
-    kb.reset_colors()
+    keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
-        win, factory, kb, rec, char_list, synergy,
+        win, factory, keyboard, recorder, char_list, synergy,
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE1,
     )
     if choice1_code is None:
@@ -141,11 +141,11 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     _apply_synergy_colors(factory, char_list, choice1_idx, choice1_code, synergy)
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
-    rec.start_segment()
-    kb.reset_colors()
-    kb.set_excluded(choice1_idx)
+    recorder.start_segment()
+    keyboard.reset_colors()
+    keyboard.set_excluded(choice1_idx)
     _, choice2_code, rt2 = _run_choice_loop(
-        win, factory, kb, rec, char_list, synergy,
+        win, factory, keyboard, recorder, char_list, synergy,
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
         excluded_idx=choice1_idx,
         freeze_colors=True,

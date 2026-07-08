@@ -115,6 +115,7 @@ class VisualObjectFactory:
         self.block_stims = {}
         self.overlay_stims = {}
         self._locked_chars: set = set()
+        self._border_colors: dict = {}
 
         self._create_ui_elements()
 
@@ -224,11 +225,21 @@ class VisualObjectFactory:
         """매 Trial 시작 전 모든 테두리와 블록 색상을 초기 상태로 깨끗하게 청소합니다."""
         self._locked_chars.clear()
         for char_name in self.char_list:
-            self.border_stims[char_name].setLineColor('white')
+            self._border_colors[char_name] = 'white'
             self.border_stims[char_name].lineWidth = 6
-            self.border_stims[char_name].opacity = 0
+            self.border_stims[char_name].setLineColor(None)  # opacity 대신 lineColor=None으로 완전 은닉
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0
+
+    def set_border_color(self, char_name: str, color) -> None:
+        """테두리 색상을 저장만 하고, 표시 여부는 show/hide_border로 제어합니다."""
+        self._border_colors[char_name] = color
+
+    def show_border(self, char_name: str) -> None:
+        self.border_stims[char_name].lineColor = self._border_colors.get(char_name, 'white')
+
+    def hide_border(self, char_name: str) -> None:
+        self.border_stims[char_name].lineColor = None
 
     def set_animal_locked(self, char_name: str, locked: bool) -> None:
         """Choice 1 확정 시 동물 이미지 위에 OVERLAY를 activate/disactivate 합니다."""
