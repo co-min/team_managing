@@ -61,7 +61,7 @@ COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 
 # phase1 instruction  ({block_num}/{total_blocks} filled in at runtime)
 INST_PHASE1 = """\
-[{block_num} / {total_blocks} 블록]
+[{block_num} / {total_blocks}]
 
 이번 단계에서는 능력치가 보입니다.
 협력도를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.
