@@ -4,7 +4,7 @@ metadata.py
 Per-trial behavioral metadata saver.
 
 Saves JSON to:
-  data/sub-{subject_id}/{domain}/{phase}/{stim_pair_id}/metadata.json
+  data/sub-{subject_id}/block_{block_i}/{phase}/{domain}/{stim_pair_id}/metadata.json
 """
 
 import json
@@ -20,6 +20,7 @@ _SLOT_NAMES: List[str] = ['up', 'down', 'right', 'left']
 
 def build_trial_record(
     subject_id: str,
+    block_i: int,
     phase: str,
     domain: str,
     trial_id: int,
@@ -31,14 +32,13 @@ def build_trial_record(
 ) -> Dict[str, Any]:
     """Build and return the trial metadata dict (does not write to disk)."""
     layout = {slot: animal for slot, animal in zip(_SLOT_NAMES, char_order)}
-    # Build per-trial char-code → animal map from the actual animals shown this trial.
-    # char_order contains real animal names; CHAR_CODE maps animal → char code.
     code_to_animal = {_CHAR_CODE[animal]: animal for animal in char_order}
     responded = result is not None
     c1 = result['choice1'] if responded else None
     c2 = result['choice2'] if responded else None
     return {
         "subject_id":     subject_id,
+        "block":          f"block_{block_i}",
         "phase":          phase,
         "domain":         domain,
         "trial_id":       trial_id,
@@ -59,6 +59,7 @@ def build_trial_record(
 
 def save_trial_metadata(
     subject_id: str,
+    block_i: int,
     phase: str,
     domain: str,
     trial_id: int,
@@ -76,10 +77,10 @@ def save_trial_metadata(
     (Path, record) — path of the saved JSON and the record dict.
     """
     record = build_trial_record(
-        subject_id, phase, domain, trial_id, stim_pair_id,
+        subject_id, block_i, phase, domain, trial_id, stim_pair_id,
         char_order, result, feedback_score, elapsed_time,
     )
-    save_dir = ensure_trial_save_dir(subject_id, phase, domain, stim_pair_id)
+    save_dir = ensure_trial_save_dir(subject_id, block_i, phase, domain, stim_pair_id)
     out_path = save_dir / "metadata.json"
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(record, f, indent=2, ensure_ascii=False)

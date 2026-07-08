@@ -8,10 +8,11 @@ Reads data/sub-{id}/trials.csv and produces:
 
 Experiment structure assumed
 ----------------------------
-Each phase contains N domains run sequentially.
-  phase_1: domain_1 (18 trials) → domain_2 (18 trials) → domain_3 (18 trials)
-  phase_2: same domain order, same trial counts
-  phase_3: same domain order, fewer trials (see P3_TRIALS in settings)
+6 blocks run sequentially.  Blocks alternate phase_1 / phase_2.
+Each block contains 18 trials spread evenly across 3 domains (6 per domain).
+Each block uses a dedicated animal group (4 animals).
+
+  block_0 → phase_1,  block_1 → phase_2,  block_2 → phase_1 ...
 
 Output structure
 ----------------
@@ -19,23 +20,30 @@ Output structure
   "subject_id": "001",
   "generated_at": "...",
   "overall": { total_trials, responded_trials, response_rate,
-               mean_rt1, mean_rt2, mean_feedback_score },
-  "by_phase": {
-    "phase_1": {
+               mean_rt1, mean_rt2, mean_feedback_score, total_score },
+  "by_block": {
+    "block_0": {
+      "phase": "phase_1",
       "domain_order": ["cooking", "repairing", "tennis"],
-      "total_trials": 54,
+      "total_trials": 18,
       ...same stats...
-    }
+    },
+    ...
+  },
+  "by_phase": {
+    "phase_1": { total_trials: 54, ... },   ← aggregated across all phase_1 blocks
+    "phase_2": { ... }
   },
   "by_domain": {
-    "cooking": { total_trials, ... }   ← aggregated across all phases
+    "cooking": { total_trials: 36, ... }    ← aggregated across all blocks
   },
-  "by_phase_domain": {
-    "phase_1": {
-      "cooking":   { total_trials: 18, ... },
+  "by_block_domain": {
+    "block_0": {
+      "cooking":   { total_trials: 6, ... },
       "repairing": { ... },
       "tennis":    { ... }
-    }
+    },
+    ...
   }
 }
 """
@@ -100,12 +108,18 @@ def build_experiment_summary(subject_id: str) -> Dict[str, Any]:
     """
     Build the full summary dict from data/sub-{id}/trials.csv.
 
-    Preserves the encounter order of phases and domains so that
+    Preserves the encounter order of blocks, phases, and domains so that
     'domain_order' reflects the actual run sequence.
     """
     rows = _read_trials(subject_id)
 
-    # Preserve first-seen ordering for phases and domains
+    # Preserve first-seen ordering for blocks, phases, and domains
+    blocks_seen: List[str] = []
+    for r in rows:
+        b = r.get("block", "")
+        if b and b not in blocks_seen:
+            blocks_seen.append(b)
+
     phases_seen: List[str] = []
     for r in rows:
         p = r.get("phase", "")
@@ -118,47 +132,58 @@ def build_experiment_summary(subject_id: str) -> Dict[str, Any]:
         if d and d not in domains_seen:
             domains_seen.append(d)
 
-    # Domain run-order within each phase
-    phase_domain_order: Dict[str, List[str]] = {}
+    # Phase and domain run-order within each block
+    block_phase: Dict[str, str] = {}
+    block_domain_order: Dict[str, List[str]] = {}
     for r in rows:
-        p, d = r.get("phase", ""), r.get("domain", "")
-        if p and d:
-            order = phase_domain_order.setdefault(p, [])
+        b, p, d = r.get("block", ""), r.get("phase", ""), r.get("domain", "")
+        if b and p:
+            block_phase.setdefault(b, p)
+        if b and d:
+            order = block_domain_order.setdefault(b, [])
             if d not in order:
                 order.append(d)
 
-    # by_phase
-    by_phase: Dict[str, Any] = {}
-    for phase in phases_seen:
-        phase_rows = [r for r in rows if r.get("phase") == phase]
-        stats = _aggregate(phase_rows)
-        stats["domain_order"] = phase_domain_order.get(phase, [])
-        by_phase[phase] = stats
+    # by_block
+    by_block: Dict[str, Any] = {}
+    for block in blocks_seen:
+        block_rows = [r for r in rows if r.get("block") == block]
+        stats = _aggregate(block_rows)
+        stats["phase"]        = block_phase.get(block, "")
+        stats["domain_order"] = block_domain_order.get(block, [])
+        by_block[block] = stats
 
-    # by_domain  (aggregated across ALL phases)
+    # by_phase (aggregated across ALL blocks of the same phase)
+    by_phase: Dict[str, Any] = {
+        phase: _aggregate([r for r in rows if r.get("phase") == phase])
+        for phase in phases_seen
+    }
+
+    # by_domain (aggregated across ALL blocks)
     by_domain: Dict[str, Any] = {
         domain: _aggregate([r for r in rows if r.get("domain") == domain])
         for domain in domains_seen
     }
 
-    # by_phase_domain  (finest grain: one cell per phase × domain)
-    by_phase_domain: Dict[str, Dict[str, Any]] = {}
-    for phase in phases_seen:
-        by_phase_domain[phase] = {
+    # by_block_domain (finest grain: one cell per block × domain)
+    by_block_domain: Dict[str, Dict[str, Any]] = {}
+    for block in blocks_seen:
+        by_block_domain[block] = {
             domain: _aggregate([
                 r for r in rows
-                if r.get("phase") == phase and r.get("domain") == domain
+                if r.get("block") == block and r.get("domain") == domain
             ])
-            for domain in phase_domain_order.get(phase, [])
+            for domain in block_domain_order.get(block, [])
         }
 
     return {
         "subject_id":      subject_id,
         "generated_at":    datetime.now().isoformat(timespec="seconds"),
         "overall":         _aggregate(rows),
+        "by_block":        by_block,
         "by_phase":        by_phase,
         "by_domain":       by_domain,
-        "by_phase_domain": by_phase_domain,
+        "by_block_domain": by_block_domain,
     }
 
 
@@ -166,7 +191,7 @@ def save_experiment_summary(subject_id: str) -> Path:
     """
     Build and write data/sub-{id}/summary.json.
 
-    Call this at the end of each phase or at experiment completion.
+    Call this at the end of each block or at experiment completion.
     The file is overwritten each time so it always reflects the
     latest completed trials.
 

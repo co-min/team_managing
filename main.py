@@ -112,13 +112,13 @@ def _run_block_trials(
                          handle=handle, trig_code=_TRIG_FEEDBACK[phase])
 
         _, record = save_trial_metadata(
-            subject_id=subject_id, phase=phase, domain=domain,
+            subject_id=subject_id, block_i=block_i, phase=phase, domain=domain,
             trial_id=trial_i, stim_pair_id=stim_pair_id,
             char_order=char_order, result=result, feedback_score=fb_score,
             elapsed_time=global_clock.getTime(),
         )
         rows     = get_rows(frame_log)
-        save_dir = build_trial_save_dir(subject_id, phase, domain, stim_pair_id)
+        save_dir = build_trial_save_dir(subject_id, block_i, phase, domain, stim_pair_id)
         save_thread = threading.Thread(
             target=_persist_trial, args=(subject_id, record, rows, save_dir), daemon=True,
         )
