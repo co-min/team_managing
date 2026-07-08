@@ -41,8 +41,8 @@ ARROW_RADIUS = 30
 
 
 # --- Trial ---
-P1_TRIALS = 2
-P2_TRIALS = 2
+P1_TRIALS = 18
+P2_TRIALS = 18
 P3_TRIALS = 6
 
 # --- Feed back ---
