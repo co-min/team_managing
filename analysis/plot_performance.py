@@ -18,6 +18,7 @@ Criterion note
   the end-of-block cumulative criterion.
 """
 
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -28,7 +29,7 @@ import numpy as np
 from pathlib import Path
 
 # ── configuration ──────────────────────────────────────────────────────────────
-SUBJECT_ID   = "sub-003"
+SUBJECT_ID   = sys.argv[1] if len(sys.argv) > 1 else "sub-003"
 ROOT         = Path(__file__).parent.parent
 DATA_PATH    = ROOT / "data" / SUBJECT_ID / "trials.csv"
 OUT_PATH     = ROOT / "data" / SUBJECT_ID / "performance_figure.png"
@@ -196,21 +197,26 @@ for row_idx, phase in enumerate(PHASES):
             )
             ax_strip.add_patch(rect)
 
-            abbr = ANIMAL_ABBR.get(
-                r["choice1_animal"],
-                r["choice1_animal"][:3].upper(),
-            )
             txt_color = "white" if r["feedback_score"] < 6 else "#1a1a1a"
+            c1 = str(r["choice1_code"])
+            c2 = str(r["choice2_code"])
+            # choice1 (upper, bold)
             ax_strip.text(
-                r["trial_x"], tile_y0 + tile_h / 2, abbr,
+                r["trial_x"], tile_y0 + tile_h * 0.67, c1,
                 ha="center", va="center",
-                fontsize=5.8, fontweight="bold", color=txt_color,
+                fontsize=6.5, fontweight="bold", color=txt_color,
+            )
+            # choice2 (lower, lighter)
+            ax_strip.text(
+                r["trial_x"], tile_y0 + tile_h * 0.28, c2,
+                ha="center", va="center",
+                fontsize=5.2, fontweight="normal", color=txt_color, alpha=0.75,
             )
 
     ax_strip.set_xlim(x_start - 0.6, x_end + 0.6)
     ax_strip.set_ylim(0, 1)
     ax_strip.set_yticks([0.5])
-    ax_strip.set_yticklabels(["1st Choice"], fontsize=8)
+    ax_strip.set_yticklabels(["Choice\n(1st/2nd)", ], fontsize=7)
     ax_strip.set_xlabel("Trial Number", fontsize=10)
 
     # x-ticks every 3 trials

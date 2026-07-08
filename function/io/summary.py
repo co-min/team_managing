@@ -81,13 +81,16 @@ def _aggregate(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         if r.get("response_made") in ("True", True, "1", 1)
     ]
     n = len(responded)
+    feedback_scores = [_to_float(r.get("feedback_score")) for r in responded]
+    clean_scores = [v for v in feedback_scores if v is not None]
     return {
         "total_trials":        total,
         "responded_trials":    n,
         "response_rate":       round(n / total, 4) if total > 0 else None,
         "mean_rt1":            _safe_mean([_to_float(r.get("rt_choice1"))  for r in responded]),
         "mean_rt2":            _safe_mean([_to_float(r.get("rt_choice2"))  for r in responded]),
-        "mean_feedback_score": _safe_mean([_to_float(r.get("feedback_score")) for r in responded]),
+        "total_score":         round(sum(clean_scores), 4) if clean_scores else None,
+        "mean_feedback_score": _safe_mean(feedback_scores),
     }
 
 
@@ -175,3 +178,16 @@ def save_experiment_summary(subject_id: str) -> Path:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     return out_path
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) < 2:
+        print("Usage: python -m function.io.summary <subject_id> [subject_id ...]")
+        print("Example: python -m function.io.summary 003 004")
+        sys.exit(1)
+
+    for sid in sys.argv[1:]:
+        path = save_experiment_summary(sid)
+        print(f"[OK] sub-{sid} → {path}")

@@ -10,9 +10,11 @@ within the same trial exceeds THRESHOLD * expected_frame_duration.
 
 Usage
 -----
-    python check_frame.py                         # auto-find frame_log.csv in data/
-    python check_frame.py path/to/frame_log.csv   # explicit path
-    python check_frame.py --hz 120                # override monitor refresh rate
+    python check_frame.py                              # all subjects combined
+    python check_frame.py --sub sub-003               # one subject only
+    python check_frame.py --sub sub-003 --save        # save drop_report.csv to data/sub-003/
+    python check_frame.py path/to/frame_log.csv       # single explicit file
+    python check_frame.py --hz 120                    # override monitor refresh rate
 """
 
 import csv
@@ -44,6 +46,14 @@ def load_frame_log(csv_path: Path) -> List[Dict]:
         row["global_time"]  = float(row["global_time"])
 
     return rows
+
+
+def load_all_frame_logs(paths: List[Path]) -> List[Dict]:
+    """Load and concatenate multiple frame_log.csv files."""
+    all_rows: List[Dict] = []
+    for p in paths:
+        all_rows.extend(load_frame_log(p))
+    return all_rows
 
 
 # ─── grouping ─────────────────────────────────────────────────────────────────
@@ -220,14 +230,12 @@ def save_drop_report(drops: List[Dict], out_path: Path) -> None:
 
 # ─── auto-find ────────────────────────────────────────────────────────────────
 
-def find_frame_log(start: Path) -> Path:
+def find_frame_logs(start: Path) -> List[Path]:
     candidates = sorted(start.rglob("frame_log.csv"))
     if not candidates:
         raise FileNotFoundError(f"No frame_log.csv found under {start}")
-    if len(candidates) > 1:
-        print(f"  [INFO] Multiple frame_log.csv found, using most recent.")
-        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    return candidates[0]
+    print(f"  [INFO] {len(candidates)} frame_log.csv file(s) found - combining all.")
+    return candidates
 
 
 # ─── entry point ──────────────────────────────────────────────────────────────
@@ -235,19 +243,34 @@ def find_frame_log(start: Path) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Check frame drops in frame_log.csv")
     parser.add_argument("csv_path", nargs="?", type=Path,
-                        help="Path to frame_log.csv (auto-detected if omitted)")
+                        help="Path to a single frame_log.csv (auto-detected if omitted)")
+    parser.add_argument("--sub",  type=str, default=None,
+                        help="Subject ID to analyse (e.g. sub-003). Searches data/<sub>/")
     parser.add_argument("--hz",  type=float, default=DEFAULT_HZ,
                         help=f"Monitor refresh rate in Hz (default: {DEFAULT_HZ})")
     parser.add_argument("--save", action="store_true",
-                        help="Save drop list to drop_report.csv next to frame_log.csv")
+                        help="Save drop list to drop_report.csv")
     args = parser.parse_args()
-
-    csv_path: Path = args.csv_path or find_frame_log(Path("."))
-    print(f"  Loading: {csv_path}")
 
     expected_ms = 1000.0 / args.hz
 
-    rows   = load_frame_log(csv_path)
+    if args.csv_path:
+        print(f"  Loading: {args.csv_path}")
+        rows    = load_frame_log(args.csv_path)
+        save_dir = args.csv_path.parent
+    elif args.sub:
+        sub_dir = Path("data") / args.sub
+        if not sub_dir.exists():
+            raise FileNotFoundError(f"Subject folder not found: {sub_dir}")
+        print(f"  Subject : {args.sub}")
+        paths   = find_frame_logs(sub_dir)
+        rows    = load_all_frame_logs(paths)
+        save_dir = sub_dir
+    else:
+        paths   = find_frame_logs(Path("."))
+        rows    = load_all_frame_logs(paths)
+        save_dir = Path(".")
+
     groups = group_by_trial(rows)
     drops  = detect_drops(groups, expected_ms)
     stats  = compute_stats(rows, groups, drops)
@@ -255,7 +278,7 @@ def main() -> None:
     print_report(stats, drops, expected_ms)
 
     if args.save and drops:
-        out_path = csv_path.parent / "drop_report.csv"
+        out_path = save_dir / "drop_report.csv"
         save_drop_report(drops, out_path)
 
 
