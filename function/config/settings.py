@@ -6,6 +6,28 @@ import pandas as pd
 ROOT_DIR        = Path(__file__).resolve().parents[2]
 DATA_DIR        = ROOT_DIR / "data"
 
+# ─── Mode ─────────────────────────────────────────────────────────────────────
+# MODE 1 : competence_table.csv       + score_table.csv        (3 domains)
+# MODE 2 : competence_table_domain2.csv + score_table_domain2.csv (2 domains)
+MODE = 2
+
+if MODE == 1:
+    COMPETENCE_CSV   = ROOT_DIR / 'stimuli' / 'competence_table.csv'
+    SCORE_CSV        = ROOT_DIR / 'stimuli' / 'score_table.csv'
+    DOMAINS          = ['cooking', 'repairing', 'tennis']
+    P1_TRIALS        = 16
+    P2_TRIALS        = 16
+    P3_TRIALS        = 6
+    COMPETENCE_COLOR = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}          # 3-level
+else:
+    COMPETENCE_CSV   = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
+    SCORE_CSV        = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
+    DOMAINS          = ['cooking', 'repairing']
+    P1_TRIALS        = 16
+    P2_TRIALS        = 16
+    P3_TRIALS        = 6
+    COMPETENCE_COLOR = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  # 4-level
+
 
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
@@ -40,23 +62,16 @@ ARROW_OFFSET = 60
 ARROW_RADIUS = 30
 
 
-# --- Trial ---
-P1_TRIALS = 8
-P2_TRIALS = 8
-P3_TRIALS = 6
-
 # --- Feed back ---
 FB_TIME = 3.5
 
 
-# Animal name -> char_ani code — derived from competence_table.csv (no hardcoding)
-_comp_df  = pd.read_csv(ROOT_DIR / 'stimuli' / 'competence_table.csv', skipinitialspace=True)
+# Animal name -> char_ani code — derived from competence CSV for the active MODE
+_comp_df  = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
 CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
 
 # Synergy score -> block fill colour
 SYNERGY_COLOR = {2: 'green', 1.5: 'yellow', 1: 'red'}
-
-COMPETENCE_COLOR = {3: 'green', 2: 'yellow', 1: 'red'}
 
 
 # phase1 instruction  ({block_num}/{total_blocks} filled in at runtime)

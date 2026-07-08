@@ -5,7 +5,7 @@ from psychopy import core
 
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2
+from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2, DOMAINS
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
@@ -20,8 +20,6 @@ from function.phases.feedback import run_feedback
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 from utils.screen_utils import show_instructions
 
-
-DOMAINS = ['cooking', 'repairing', 'tennis']
 
 # Block 1/3/5: Synergy Infer, Competency Shown  → run_phase1_trial + competence data
 # Block 2/4/6: Synergy Shown, Competency Infer  → run_phase2_trial + synergy data
@@ -138,7 +136,7 @@ def main() -> None:
     competence, synergy, score, animal_groups = load_all_data()
     get_shared_factory(win, animal_groups)
     block_schedules = _generate_block_schedules(animal_groups)
-    cumul = {'total': 0, 'phase': 0, 'cooking': 0, 'repairing': 0, 'tennis': 0}
+    cumul = {'total': 0, 'phase': 0, **{d: 0 for d in DOMAINS}}
 
     total_blocks = len(BLOCK_PHASES)
     for block_i, (phase, block_sched) in enumerate(zip(BLOCK_PHASES, block_schedules)):

@@ -1,23 +1,21 @@
 import pandas as pd
 
+from function.config.settings import COMPETENCE_CSV, SCORE_CSV, DOMAINS
+
 
 def load_all_data():
     """
     Load the three stimulus CSVs into fast-lookup dicts.
 
     competence : {char_code: {domain: score}}
-    synergy    : {(charA, charB): int}          — sorted-tuple key
-    score      : {(charA, charB): {domain: int}} — sorted-tuple key
+    synergy    : {(charA, charB): float}         — sorted-tuple key
+    score      : {(charA, charB): {domain: float}} — sorted-tuple key
     """
-    comp_df = pd.read_csv('stimuli/competence_table.csv', skipinitialspace=True)
+    comp_df = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
     competence = {}
     for _, row in comp_df.iterrows():
         char = str(row['char_ani']).strip()
-        competence[char] = {
-            'cooking':   int(row['cooking']),
-            'repairing': int(row['repairing']),
-            'tennis':    int(row['tennis']),
-        }
+        competence[char] = {d: int(row[d]) for d in DOMAINS}
 
     n_chars       = comp_df['char_ani'].nunique()
     n_groups      = len(comp_df) // n_chars
@@ -32,14 +30,10 @@ def load_all_data():
         key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
         synergy[key] = float(row['synergy_score'])
 
-    score_df = pd.read_csv('stimuli/score_table.csv', skipinitialspace=True)
+    score_df = pd.read_csv(SCORE_CSV, skipinitialspace=True)
     score = {}
     for _, row in score_df.iterrows():
         key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
-        score[key] = {
-            'cooking':   int(row['sc_cooking']),
-            'repairing': int(row['sc_repairing']),
-            'tennis':    int(row['sc_tennis']),
-        }
+        score[key] = {d: float(row[f'sc_{d}']) for d in DOMAINS}
 
     return competence, synergy, score, animal_groups

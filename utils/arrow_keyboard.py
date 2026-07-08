@@ -30,8 +30,8 @@ _KEY_TO_IDX: dict = {
 }
 
 _COLOR_IDLE      = '#0055ff'
-_COLOR_SELECTED  = '#ff8800'
-_COLOR_CONFIRMED = '#ff8800'
+_COLOR_SELECTED  = "#00d9ff"
+_COLOR_CONFIRMED = "#00d9ff"
 
 
 class ArrowKeyboard:
