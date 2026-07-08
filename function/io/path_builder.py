@@ -7,22 +7,26 @@ Directory schema
 ----------------
 data/
   sub-{subject_id}/
-    phase_0/
-      {char_id}/
-        frame_log.csv
-    {domain}/
-      phase_1/
+    trials.csv
+    frames.csv
+    summary.json
+    phase_1/
+      domain_1/
         {stim_pair_id}/
-          frame_log.csv
           metadata.json
-      phase_2/
+          frame_log.csv
+      domain_2/
         {stim_pair_id}/
-          frame_log.csv
           metadata.json
-      phase_3/
+          frame_log.csv
+      domain_3/
         {stim_pair_id}/
-          frame_log.csv
           metadata.json
+          frame_log.csv
+    phase_2/
+      domain_1/ ...
+    phase_3/
+      domain_1/ ...
 """
 
 from pathlib import Path
@@ -31,7 +35,6 @@ from function.config.settings import DATA_DIR
 
 # ── Phase folder names ────────────────────────────────────────────────────────
 PHASE_DIR_NAMES = {
-    "phase_0": "phase_0",
     "phase_1": "phase_1",
     "phase_2": "phase_2",
     "phase_3": "phase_3",
@@ -56,15 +59,15 @@ def build_trial_save_dir(
     ----------
     subject_id   : e.g. "001"
     phase        : one of "phase_1", "phase_2", "phase_3"
-    domain       : one of "cooking", "repairing", "tennis"
+    domain       : one of "domain_1", "domain_2", "domain_3"
     stim_pair_id : e.g. "pair_001"
 
     Returns
     -------
-    Path  e.g. data/sub-001/cooking/phase_1/pair_001/
+    Path  e.g. data/sub-001/phase_1/domain_1/pair_001/
     """
     phase_dir = PHASE_DIR_NAMES.get(phase, phase)
-    return get_subject_dir(subject_id) / domain / phase_dir / stim_pair_id
+    return get_subject_dir(subject_id) / phase_dir / domain / stim_pair_id
 
 
 def ensure_trial_save_dir(
