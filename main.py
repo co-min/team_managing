@@ -3,7 +3,11 @@ import threading
 from psychopy import core
 from initiate import initiate
 from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, INST_PHASE1, INST_PHASE2, DOMAINS, DOMAIN_ORDER
+from function.config.settings import (
+    MISSION_MODE,
+    P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2,
+    DOMAINS, P2_DOMAINS, DOMAIN_ORDER,
+)
 from function.io.data_loader import load_all_data
 from function.io.frame_logger import make_frame_log, get_rows
 from function.io.frame_saver import save_frame_log
@@ -14,7 +18,7 @@ from function.config.window_factory import get_shared_factory
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
 from function.phases.phase3 import run_phase3_trial
-from function.phases.feedback import run_feedback
+from function.phases.feedback import run_feedback, P2_SCORE_RANGES
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 from utils.screen_utils import show_instructions
 
@@ -27,29 +31,35 @@ _SCHEDULE_SEED = 42
 _TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK, 'phase_3': TRIG_P3_FEEDBACK}
 
 
-def _generate_block_schedules(animal_groups):
+def _generate_block_schedules(animal_groups, block_phases):
     """
     Build per-block trial schedules (one schedule per animal group).
 
-    Each block uses a single animal group for all P1_TRIALS (18) trials.
-    Domains are distributed evenly (6 per domain) and shuffled.
+    For MISSION_MODE 3: phase_1 blocks use DOMAINS/P1_TRIALS,
+    phase_2 blocks use P2_DOMAINS/P2_TRIALS.
     char_order is a random permutation of the block's 4 animals per trial.
 
     Returns
     -------
-    list of len(animal_groups) lists, each containing P1_TRIALS dicts:
+    list of len(animal_groups) lists, each a list of dicts:
         {'domain': str, 'char_order': list[str]}
     """
-    rng      = random.Random(_SCHEDULE_SEED)
-    n_trials = P1_TRIALS  # 18
+    rng = random.Random(_SCHEDULE_SEED)
 
     schedules = []
-    for group in animal_groups:
-        n_per = n_trials // len(DOMAINS)
-        if DOMAIN_ORDER == 'sequential':
-            domain_seq = [d for d in DOMAINS for _ in range(n_per)]
+    for group, phase in zip(animal_groups, block_phases):
+        if MISSION_MODE == 3 and phase == 'phase_2':
+            n_trials = P2_TRIALS   # 16
+            domains  = P2_DOMAINS  # ['cooking', 'repairing']
         else:
-            domain_seq = DOMAINS * n_per
+            n_trials = P1_TRIALS   # 18
+            domains  = DOMAINS
+
+        n_per = n_trials // len(domains)
+        if DOMAIN_ORDER == 'sequential':
+            domain_seq = [d for d in domains for _ in range(n_per)]
+        else:
+            domain_seq = domains * n_per
             rng.shuffle(domain_seq)
 
         block_sched = [
@@ -75,15 +85,20 @@ def _get_feedback_score(score, c1, c2, domain):
 def _run_block_trials(
     block_i, phase, block_schedule, run_fn, data_dict,
     win, global_clock, subject_id, handle, cumul, score,
+    block_domains=None, score_ranges=None,
 ):
     """
-    Run all 18 trials for one block.
+    Run all trials for one block.
 
     block_schedule : list of {'domain': str, 'char_order': list[str]}
+    block_domains  : active domains for this block (defaults to DOMAINS)
+    score_ranges   : score min/max dict for feedback normalisation; None = default
     File I/O is offloaded to a background thread during the following ITI.
     """
+    if block_domains is None:
+        block_domains = DOMAINS
     save_thread  = None
-    n_per_domain = P1_TRIALS // len(DOMAINS)  # 6
+    n_per_domain = len(block_schedule) // len(block_domains)
 
     for trial_i, trial_info in enumerate(block_schedule):
         domain     = trial_info['domain']
@@ -107,9 +122,11 @@ def _run_block_trials(
             run_feedback(win, fb_score, domain,
                          cumulative_score=cumul['total'],
                          phase_score=cumul['phase'],
-                         domain_scores={d: cumul[d] for d in DOMAINS},
+                         domain_scores={d: cumul[d] for d in block_domains},
                          n_trials_per_domain=n_per_domain,
-                         handle=handle, trig_code=_TRIG_FEEDBACK[phase])
+                         block_domains=block_domains,
+                         handle=handle, trig_code=_TRIG_FEEDBACK[phase],
+                         score_ranges=score_ranges)
 
         _, record = save_trial_metadata(
             subject_id=subject_id, block_i=block_i, phase=phase, domain=domain,
@@ -135,21 +152,27 @@ def main() -> None:
     handle       = ctx.handle
     global_clock = core.Clock()
 
-    competence, synergy, score, animal_groups = load_all_data()
+    competence, synergy, score, animal_groups, p2_score = load_all_data()
     get_shared_factory(win, animal_groups)
-    block_schedules = _generate_block_schedules(animal_groups)
+    block_schedules = _generate_block_schedules(animal_groups, BLOCK_PHASES)
     cumul = {'total': 0, 'phase': 0, **{d: 0 for d in DOMAINS}}
 
     total_blocks = len(BLOCK_PHASES)
     for block_i, (phase, block_sched) in enumerate(zip(BLOCK_PHASES, block_schedules)):
         block_fmt = {'block_num': block_i + 1, 'total_blocks': total_blocks}
         if phase == 'phase_1':
-            run_fn    = run_phase1_trial
-            data_dict = competence
+            run_fn        = run_phase1_trial
+            data_dict     = competence
+            block_domains = DOMAINS
+            active_score  = score
+            active_ranges = None
             show_instructions(win, INST_PHASE1.format(**block_fmt))
         else:
-            run_fn    = run_phase2_trial
-            data_dict = synergy
+            run_fn        = run_phase2_trial
+            data_dict     = synergy
+            block_domains = P2_DOMAINS if MISSION_MODE == 3 else DOMAINS
+            active_score  = p2_score if MISSION_MODE == 3 else score
+            active_ranges = P2_SCORE_RANGES if MISSION_MODE == 3 else None
             show_instructions(win, INST_PHASE2.format(**block_fmt))
 
         cumul['phase'] = 0
@@ -158,7 +181,8 @@ def main() -> None:
 
         _run_block_trials(
             block_i, phase, block_sched, run_fn, data_dict,
-            win, global_clock, subject_id, handle, cumul, score,
+            win, global_clock, subject_id, handle, cumul, active_score,
+            block_domains=block_domains, score_ranges=active_ranges,
         )
 
     win.close()

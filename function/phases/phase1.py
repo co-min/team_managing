@@ -139,7 +139,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
             factory.draw_base_scene(phase_type='phase1')
             kb.draw()
             win.flip()
-            core.wait(0.5)
+            core.wait(1.0)
             rec.log_final(win, {'response': True})
             break
 

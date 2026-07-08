@@ -149,7 +149,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
         excluded_idx=choice1_idx,
         freeze_colors=True,
-        confirm_freeze=0.5,
+        confirm_freeze=1.0,
         show_confirm_overlay=True,
     )
     if choice2_code is None:

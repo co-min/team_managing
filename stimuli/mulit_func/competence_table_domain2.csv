@@ -1,0 +1,25 @@
+id, char_ani, animal, img_file, cooking, repairing
+1,A,duck,duck.png,1,4
+2,B,frog,frog.png,2,3
+3,C,panda,panda.png,3,2
+4,D,rabbit,rabbit.png,4,1
+5,A,bear,bear.png,1,4
+6,B,cat,cat.png,2,3
+7,C,chicken,chicken.png,3,2
+8,D,cow,cow.png,4,1
+9,A,horse,horse.png,1,4
+10,B,koala,koala.png,2,3
+11,C,lion,lion.png,3,2
+12,D,tiger,tiger.png,4,1
+13,A,deer,deer.png,1,4
+14,B,dog,dog.png,2,3
+15,C,elephant,elephant.png,3,2
+16,D,fish,fish.png,4,1
+17,A,fox,fox.png,1,4
+18,B,hippo,hippo.png,2,3
+19,C,kappa,kappa.png,3,2
+20,D,mouse,mouse.png,4,1
+21,A,otter,otter.png,1,4
+22,B,seal,seal.png,2,3
+23,C,sealion,sealion.png,3,2
+24,D,sheep,sheep.png,4,1

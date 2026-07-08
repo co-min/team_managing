@@ -30,9 +30,10 @@ def show_instructions(win, text: str):
         text=text,
         font=cfg.FONT,
         pos=(0, 0),
-        height=38,
+        height=40,
         color="white",
         wrapWidth=1400,
+        bold=True,
     )
     msg.draw()
     win.flip()

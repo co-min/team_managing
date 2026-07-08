@@ -1,6 +1,9 @@
 import pandas as pd
 
-from function.config.settings import COMPETENCE_CSV, SCORE_CSV, DOMAINS
+from function.config.settings import (
+    COMPETENCE_CSV, SCORE_CSV, DOMAINS,
+    P2_SCORE_CSV, P2_DOMAINS, MISSION_MODE,
+)
 
 
 def load_all_data():
@@ -8,8 +11,10 @@ def load_all_data():
     Load the three stimulus CSVs into fast-lookup dicts.
 
     competence : {char_code: {domain: score}}
-    synergy    : {(charA, charB): float}         — sorted-tuple key
-    score      : {(charA, charB): {domain: float}} — sorted-tuple key
+    synergy    : {(charA, charB): float}           — sorted-tuple key
+    score      : {(charA, charB): {domain: float}} — sorted-tuple key (phase 1)
+    p2_score   : {(charA, charB): {domain: float}} — sorted-tuple key (phase 2)
+                 Same as score for MODE 1/2; loaded from P2_SCORE_CSV for MODE 3.
     """
     comp_df = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
     competence = {}
@@ -36,4 +41,13 @@ def load_all_data():
         key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
         score[key] = {d: float(row[f'sc_{d}']) for d in DOMAINS}
 
-    return competence, synergy, score, animal_groups
+    if MISSION_MODE == 3:
+        p2_score_df = pd.read_csv(P2_SCORE_CSV, skipinitialspace=True)
+        p2_score = {}
+        for _, row in p2_score_df.iterrows():
+            key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))
+            p2_score[key] = {d: float(row[f'sc_{d}']) for d in P2_DOMAINS}
+    else:
+        p2_score = score
+
+    return competence, synergy, score, animal_groups, p2_score

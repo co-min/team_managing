@@ -9,29 +9,48 @@ DATA_DIR        = ROOT_DIR / "data"
 # ─── Mode ─────────────────────────────────────────────────────────────────────
 # MODE 1 : competence_table.csv       + score_table.csv        (3 domains)
 # MODE 2 : competence_table_domain2.csv + score_table_domain2.csv (2 domains)
-MISSION_MODE = 2
+# MODE 3 : phase1 competency obs. 3 domains 18 trials / phase2 synergy obs. 2 domains 16 trials
+MISSION_MODE = 3
 
 # DOMAIN_ORDER: trial 내 domain 제시 순서
-#   'random'     — seed 고정 랜덤 셔플 
+#   'random'     — seed 고정 랜덤 셔플
 #   'sequential' — DOMAINS 순서대로 묶음
 DOMAIN_ORDER = 'random'
 
 if MISSION_MODE == 1:
-    COMPETENCE_CSV   = ROOT_DIR / 'stimuli' / 'competence_table.csv'
-    SCORE_CSV        = ROOT_DIR / 'stimuli' / 'score_table.csv'
-    DOMAINS          = ['cooking', 'repairing', 'tennis']
-    P1_TRIALS        = 18
-    P2_TRIALS        = 18
-    P3_TRIALS        = 6
-    COMPETENCE_COLOR = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}          # 3-level
-else:
-    COMPETENCE_CSV   = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
-    SCORE_CSV        = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
-    DOMAINS          = ['cooking', 'repairing']
-    P1_TRIALS        = 16
-    P2_TRIALS        = 16
-    P3_TRIALS        = 6
-    COMPETENCE_COLOR = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  # 4-level
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table.csv'
+    P2_COMPETENCE_CSV = COMPETENCE_CSV
+    P2_SCORE_CSV      = SCORE_CSV
+    DOMAINS           = ['cooking', 'repairing', 'tennis']
+    P2_DOMAINS        = DOMAINS
+    P1_TRIALS         = 18
+    P2_TRIALS         = 18
+    P3_TRIALS         = 6
+    COMPETENCE_COLOR  = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}          # 3-level
+elif MISSION_MODE == 2:
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
+    P2_COMPETENCE_CSV = COMPETENCE_CSV
+    P2_SCORE_CSV      = SCORE_CSV
+    DOMAINS           = ['cooking', 'repairing']
+    P2_DOMAINS        = DOMAINS
+    P1_TRIALS         = 16
+    P2_TRIALS         = 16
+    P3_TRIALS         = 6
+    COMPETENCE_COLOR  = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  # 4-level
+else:  # MISSION_MODE == 3
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table.csv'
+    P2_COMPETENCE_CSV = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
+    P2_SCORE_CSV      = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
+    DOMAINS           = ['cooking', 'repairing', 'tennis']   # phase1 domains
+    P2_DOMAINS        = ['cooking', 'repairing']              # phase2 domains
+    P1_TRIALS         = 8
+    P2_TRIALS         = 8
+    P3_TRIALS         = 6
+    COMPETENCE_COLOR  = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}  
+    # COMPETENCE_COLOR  = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  
 
 
 # ─── Window ───────────────────────────────────────────────────────────────────
