@@ -5,7 +5,9 @@ from function.config.settings import (
     MISSION_MODE,
     P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2,
     DOMAINS, P2_DOMAINS, DOMAIN_ORDER,
+    PRACTICE_MODE,
 )
+from function.practice.practice_loop import run_practice
 from function.io.data_loader import load_all_data
 from function.config.window_factory import get_shared_factory
 from function.phases.block_runner import BlockConfig, run_block_trials
@@ -76,6 +78,9 @@ def main() -> None:
     subject_id   = ctx.subject_id
     handle       = ctx.handle
     global_clock = core.Clock()
+
+    if PRACTICE_MODE:
+        run_practice(win)
 
     competence, synergy, score, animal_groups, phase2_score = load_all_data()
     get_shared_factory(win, animal_groups)

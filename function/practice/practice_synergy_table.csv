@@ -1,0 +1,4 @@
+pair_id, char1, char2, synergy_score
+1,A,B,1
+2,A,C,1.4
+4,B,C,0.8

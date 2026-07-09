@@ -95,7 +95,7 @@ _comp_df  = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
 CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
 
 # Synergy score -> block fill colour
-SYNERGY_COLOR = {2: 'green', 1.5: 'yellow', 1: 'red'}
+SYNERGY_COLOR = {1.4: 'green', 1.0: 'yellow', 0.8: 'red'}
 
 
 # phase1 instruction  ({block_num}/{total_blocks} filled in at runtime)
@@ -107,6 +107,7 @@ INST_PHASE1 = """\
 
 [Space] 키를 눌러 시작"""
 
+# phase2 instruction
 INST_PHASE2 = """\
 [{block_num} / {total_blocks} 블록]
 
@@ -115,4 +116,25 @@ INST_PHASE2 = """\
 
 [Space] 키를 눌러 시작"""
 
-# phase2 instruction
+
+
+# ─── Practice ────────────────────────────────────────────────────────────────
+PRACTICE_MODE    = True   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
+PRACTICE_DOMAINS = ['cooking', 'repairing']
+
+INST_PRACTICE_PHASE1 = (
+    "연습 1단계: 능력치\n\n"
+    "화살표 키(↑ → ←)로 원하는 동물을 선택하고\n"
+    "[Space] 키로 확정하세요.\n\n"
+    "[Space] 키를 눌러 시작"
+)
+
+INST_PRACTICE_PHASE2 = (
+    "연습 2단계: 협력도\n\n"
+    "첫 번째 동물을 고르면 협력도 색이 나타납니다.\n"
+    "색을 참고해 두 번째 동물을 선택하세요.\n\n"
+    "[Space] 키를 눌러 시작"
+)
+
+INST_PRACTICE_END = "연습이 끝났습니다.\n잠시 후 본 실험이 시작됩니다."
+PRACTICE_END_DURATION = 3.0

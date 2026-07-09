@@ -65,7 +65,7 @@ def run(config_name):
     domains = cfg['domains']
 
     competence = load_competence(os.path.join(BASE_DIR, cfg['competence_file']), domains)
-    pairs      = load_synergy(os.path.join(BASE_DIR, 'synergy_table.csv'))
+    pairs      = load_synergy(os.path.join(BASE_DIR, '..', 'synergy_table.csv'))
     rows       = generate_score_table(competence, pairs, domains)
 
     out_path   = os.path.join(BASE_DIR, cfg['output_file'])
