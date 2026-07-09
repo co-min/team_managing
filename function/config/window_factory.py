@@ -130,9 +130,9 @@ class VisualObjectFactory:
         domain_bottom = domain_y - domain_size // 2
 
         # 동물 이미지 크기 및 십자 배치 거리
-        animal_size = int(H * 0.180)
-        animal_v    = int(H * 0.210)   # 중심으로부터 상하 거리
-        animal_h    = int(W * 0.158)   # 중심으로부터 좌우 거리
+        animal_size = int(H * 0.160)
+        animal_v    = int(H * 0.200)   # 중심으로부터 상하 거리
+        animal_h    = int(W * 0.150)   # 중심으로부터 좌우 거리
 
         # 동물 십자 전체를 아래로 내려 도메인 질문과의 간격 확보
         center_y = -int(H * 0.13)
@@ -200,7 +200,7 @@ class VisualObjectFactory:
                 win=self.win,
                 pos=info['pos'],
                 width=bz, height=bz,
-                lineWidth=12,
+                lineWidth=14,
                 lineColor= None,
                 fillColor=None,
                 units='pix'
@@ -226,7 +226,7 @@ class VisualObjectFactory:
         self._locked_chars.clear()
         for char_name in self.char_list:
             self._border_colors[char_name] = 'white'
-            self.border_stims[char_name].lineWidth = 6
+            self.border_stims[char_name].lineWidth = 10
             self.border_stims[char_name].setLineColor(None)  # opacity 대신 lineColor=None으로 완전 은닉
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0
