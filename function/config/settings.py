@@ -15,7 +15,7 @@ MISSION_MODE = 3
 # DOMAIN_ORDER: trial 내 domain 제시 순서
 #   'random'     — seed 고정 랜덤 셔플
 #   'sequential' — DOMAINS 순서대로 묶음
-DOMAIN_ORDER = 'sequential'
+DOMAIN_ORDER = 'random'
 
 if MISSION_MODE == 1:
     COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'
@@ -46,8 +46,8 @@ else:  # MISSION_MODE == 3
     P2_SCORE_CSV      = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
     DOMAINS           = ['cooking', 'repairing', 'tennis']   # phase1 domains
     P2_DOMAINS        = ['cooking', 'repairing']              # phase2 domains
-    P1_TRIALS         = 8
-    P2_TRIALS         = 8
+    P1_TRIALS         = 18
+    P2_TRIALS         = 16
     P3_TRIALS         = 6
     COMPETENCE_COLOR  = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}  
     # COMPETENCE_COLOR  = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  
@@ -121,8 +121,8 @@ INST_PHASE2 = """\
 # ─── Practice ────────────────────────────────────────────────────────────────
 PRACTICE_MODE    = True   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
 PRACTICE_DOMAINS = ['cooking', 'repairing']
-PRACTICE_P1_TRIALS = 2   # Phase 1 연습 총 trial 수 (도메인 순환)
-PRACTICE_P2_TRIALS = 2   # Phase 2 연습 총 trial 수 (도메인 순환)
+PRACTICE_P1_TRIALS = 4   # Phase 1 연습 총 trial 수 
+PRACTICE_P2_TRIALS = 4   # Phase 2 연습 총 trial 수
 
 INST_PRACTICE_PHASE1 = (
     "연습 1단계: 능력치\n\n"
