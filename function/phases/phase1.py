@@ -35,7 +35,7 @@ def _run_choice_loop(
             if pressed == 'space':
                 if preview_idx is not None:
                     chosen_code = _CHAR_CODE[char_list[preview_idx]]
-                    send_trigger(handle, choice_trig_base + ANIMAL_IDX[chosen_code])
+                    send_trigger(handle, choice_trig_base + ANIMAL_IDX[char_list[preview_idx]])
                     if lock_on_confirm:
                         factory.set_animal_locked(char_list[preview_idx], True)
                     factory.draw_base_scene(phase_type='phase1')

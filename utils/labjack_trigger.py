@@ -27,10 +27,23 @@ _LATCH_CIO_STATE = 0x01  # CIO0 = HIGH
 TRIG_RESET = 0
 
 # =========================================
-# Animal index  A=0, B=1, C=2, D=3
+# Animal index — 24마리 고유 ID (동물명 기준)
+#   Group 1 (0- 3): duck, frog, panda, rabbit
+#   Group 2 (4- 7): bear, cat, chicken, cow
+#   Group 3 (8-11): horse, koala, lion, tiger
+#   Group 4 (12-15): deer, dog, elephant, fish
+#   Group 5 (16-19): fox, hippo, kappa, mouse
+#   Group 6 (20-23): otter, seal, sealion, sheep
 # =========================================
 
-ANIMAL_IDX = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+ANIMAL_IDX = {
+    'duck': 0,  'frog': 1,     'panda': 2,    'rabbit': 3,
+    'bear': 4,  'cat': 5,      'chicken': 6,  'cow': 7,
+    'horse': 8, 'koala': 9,    'lion': 10,    'tiger': 11,
+    'deer': 12, 'dog': 13,     'elephant': 14,'fish': 15,
+    'fox': 16,  'hippo': 17,   'kappa': 18,   'mouse': 19,
+    'otter': 20,'seal': 21,    'sealion': 22, 'sheep': 23,
+}
 
 # =========================================
 # Stimulus onset — phase를 인코딩
@@ -42,38 +55,38 @@ TRIG_P3_STIMULUS = 30   # Phase 3 (choice)
 
 # =========================================
 # Choice — phase + choice 순서 + 동물 인코딩
-#   base + ANIMAL_IDX → A=+0, B=+1, C=+2, D=+3
+#   base + ANIMAL_IDX (0-23) → 동물명으로 조회
 #
-#   P1: choice1 = 41-44,  choice2 = 45-48
-#   P2: choice1 = 51-54,  choice2 = 55-58
-#   P3: choice1 = 61-64,  choice2 = 65-68
+#   P1: choice1 = 41-64,  choice2 =  65-88
+#   P2: choice1 = 89-112, choice2 = 113-136
+#   P3: choice1 = 137-160,choice2 = 161-184
 # =========================================
 
 TRIG_P1_CHOICE1 = 41
-TRIG_P1_CHOICE2 = 45
-TRIG_P2_CHOICE1 = 51
-TRIG_P2_CHOICE2 = 55
-TRIG_P3_CHOICE1 = 61
-TRIG_P3_CHOICE2 = 65
+TRIG_P1_CHOICE2 = 65
+TRIG_P2_CHOICE1 = 89
+TRIG_P2_CHOICE2 = 113
+TRIG_P3_CHOICE1 = 137
+TRIG_P3_CHOICE2 = 161
 
 # =========================================
 # Feedback — phase를 인코딩
 # =========================================
 
-TRIG_P1_FEEDBACK = 71
-TRIG_P2_FEEDBACK = 72
-TRIG_P3_FEEDBACK = 73
+TRIG_P1_FEEDBACK = 191
+TRIG_P2_FEEDBACK = 192
+TRIG_P3_FEEDBACK = 193
 
 # =========================================
 # Trial boundary — phase를 인코딩
 # =========================================
 
-TRIG_P1_TRIAL_START = 101
-TRIG_P2_TRIAL_START = 102
-TRIG_P3_TRIAL_START = 103
-TRIG_P1_TRIAL_END   = 201
-TRIG_P2_TRIAL_END   = 202
-TRIG_P3_TRIAL_END   = 203
+TRIG_P1_TRIAL_START = 211
+TRIG_P2_TRIAL_START = 212
+TRIG_P3_TRIAL_START = 213
+TRIG_P1_TRIAL_END   = 231
+TRIG_P2_TRIAL_END   = 232
+TRIG_P3_TRIAL_END   = 233
 
 
 

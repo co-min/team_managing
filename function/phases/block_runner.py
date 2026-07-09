@@ -9,6 +9,7 @@ from function.io.frame_saver import save_frame_log
 from function.io.metadata import save_trial_metadata
 from function.io.path_builder import build_trial_save_dir
 from function.io.subject_csv import append_trial_row, append_frame_rows
+from function.io.summary import save_experiment_summary
 from function.phases.feedback import run_feedback
 from utils.inter_trial import run_gaussian_iti
 
@@ -108,3 +109,5 @@ def run_block_trials(
 
     if save_thread:
         save_thread.join()
+
+    save_experiment_summary(subject_id)

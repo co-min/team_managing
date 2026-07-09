@@ -35,7 +35,7 @@ from utils.screen_utils import show_instructions
 # ══════════════════════════════════════════════════════════════════════════════
 
 _PRACTICE_DIR = Path(__file__).parent
-_IMAGE_DIR    = _PRACTICE_DIR / "practice_image"
+_IMAGE_DIR    = _PRACTICE_DIR / "image"
 
 _ANIMAL_SIZE  = 150    # px — animal image width and height
 _BORDER_EXTRA = 12     # border extends this many px beyond animal image
@@ -318,6 +318,8 @@ def _competence_choice_loop(win, scene, char_order, excluded_slot=None,
         for pressed, t in event.getKeys(keyList=list(_KEY_TO_SLOT) + ['space'],
                                         timeStamped=clock):
             if pressed == 'space' and preview_slot is not None:
+                if excluded_slot is not None:
+                    scene.lock_animal(char_order[preview_slot])
                 scene.draw(show_blocks=False)
                 win.flip()
                 core.wait(confirm_wait)
@@ -362,6 +364,8 @@ def _synergy_choice_loop(win, scene, char_order, data,
         for pressed, t in event.getKeys(keyList=list(_KEY_TO_SLOT) + ['space'],
                                         timeStamped=clock):
             if pressed == 'space' and preview_slot is not None:
+                if excluded_slot is not None:
+                    scene.lock_animal(char_order[preview_slot])
                 scene.draw(show_blocks=True)
                 win.flip()
                 core.wait(confirm_wait)

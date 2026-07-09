@@ -37,7 +37,7 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, handle,
         for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space'], timeStamped=response_clock):
             if pressed == 'space' and preview_idx is not None:
                 chosen_code = _CHAR_CODE[char_list[preview_idx]]
-                send_trigger(handle, choice_trig_base + ANIMAL_IDX[chosen_code])
+                send_trigger(handle, choice_trig_base + ANIMAL_IDX[char_list[preview_idx]])
                 factory.draw_base_scene(phase_type='phase3')
                 keyboard.draw()
                 win.flip()

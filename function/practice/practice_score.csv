@@ -1,4 +1,4 @@
 pair_id,char1,char2,sc_cooking,sc_repairing
-1,A,B,4.0,4.0
-2,A,C,5.0,7.0
-4,B,C,4.0,3.0
+1,A,B,3.0,5.0
+2,A,C,5.0,5.0
+3,B,C,4.0,3.0

@@ -14,8 +14,28 @@ from typing import Any, Dict, List, Optional
 
 from function.config.settings import CHAR_CODE as _CHAR_CODE
 from function.io.path_builder import ensure_trial_save_dir
+from utils.labjack_trigger import (
+    ANIMAL_IDX,
+    TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
+    TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
+    TRIG_P3_CHOICE1, TRIG_P3_CHOICE2,
+)
 
 _SLOT_NAMES: List[str] = ['up', 'down', 'right', 'left']
+
+_CHOICE1_BASE = {'phase_1': TRIG_P1_CHOICE1, 'phase_2': TRIG_P2_CHOICE1, 'phase_3': TRIG_P3_CHOICE1}
+_CHOICE2_BASE = {'phase_1': TRIG_P1_CHOICE2, 'phase_2': TRIG_P2_CHOICE2, 'phase_3': TRIG_P3_CHOICE2}
+
+
+def _trig_code(phase: str, animal: Optional[str], choice_num: int) -> Optional[int]:
+    """Return the trigger code that was sent for this choice, or None if not applicable."""
+    if animal is None:
+        return None
+    base = (_CHOICE1_BASE if choice_num == 1 else _CHOICE2_BASE).get(phase)
+    idx  = ANIMAL_IDX.get(animal)
+    if base is None or idx is None:
+        return None
+    return base + idx
 
 
 def build_trial_record(
@@ -36,6 +56,8 @@ def build_trial_record(
     responded = result is not None
     c1 = result['choice1'] if responded else None
     c2 = result['choice2'] if responded else None
+    c1_animal = code_to_animal.get(c1) if c1 else None
+    c2_animal = code_to_animal.get(c2) if c2 else None
     return {
         "subject_id":     subject_id,
         "block":          f"block_{block_i}",
@@ -47,8 +69,10 @@ def build_trial_record(
         "response_made":  responded,
         "choice1_code":   c1,
         "choice2_code":   c2,
-        "choice1_animal": code_to_animal.get(c1) if c1 else None,
-        "choice2_animal": code_to_animal.get(c2) if c2 else None,
+        "choice1_animal": c1_animal,
+        "choice2_animal": c2_animal,
+        "trig_choice1":   _trig_code(phase, c1_animal, 1) if responded else None,
+        "trig_choice2":   _trig_code(phase, c2_animal, 2) if responded else None,
         "rt_choice1":     round(result['rt1'], 4) if responded and result.get('rt1') is not None else None,
         "rt_choice2":     round(result['rt2'], 4) if responded and result.get('rt2') is not None else None,
         "feedback_score": feedback_score if responded else None,

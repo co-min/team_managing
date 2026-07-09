@@ -58,7 +58,7 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
                     confirmed_idx  = preview_idx
                     confirmed_code = _CHAR_CODE[char_list[preview_idx]]
                     confirmed_rt   = t
-                    send_trigger(handle, choice_trig_base + ANIMAL_IDX[confirmed_code])
+                    send_trigger(handle, choice_trig_base + ANIMAL_IDX[char_list[preview_idx]])
             else:
                 keyboard.reset_colors()
                 arrow_idx = keyboard.select(pressed, excluded_idx=excluded_idx)
