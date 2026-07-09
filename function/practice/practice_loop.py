@@ -11,6 +11,7 @@ Phase 2 (synergy task)    : one trial per domain, with live synergy-colour block
 Entry point: run_practice(win)
 """
 
+import math
 import random
 from pathlib import Path
 
@@ -19,12 +20,14 @@ from psychopy import visual, event, core
 
 from function.config.settings import (
     FONT, COMPETENCE_COLOR, SYNERGY_COLOR, MAX_RESPONSE_TIME,
-    PRACTICE_DOMAINS,
+    PRACTICE_DOMAINS, PRACTICE_P1_TRIALS, PRACTICE_P2_TRIALS,
     INST_PRACTICE_PHASE1, INST_PRACTICE_PHASE2,
     INST_PRACTICE_END, PRACTICE_END_DURATION,
 )
 from function.phases.feedback import run_feedback
 from utils.event_utils import check_escape
+from utils.screen_utils import show_instructions
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -470,19 +473,6 @@ def _run_phase2_trial(win, scene, data, char_order, domain):
 # Instruction / message helpers
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _show_instruction(win, text):
-    """Display instruction text and wait for Space to continue."""
-    stim = visual.TextStim(
-        win, text=text, font=FONT, color='white', height=32, wrapWidth=800,
-    )
-    event.clearEvents()
-    while True:
-        check_escape(win)
-        stim.draw()
-        win.flip()
-        if 'space' in event.getKeys(['space']):
-            break
-
 
 def _show_message(win, text, duration=2.5):
     """Display a brief timed message with no input required."""
@@ -513,13 +503,20 @@ def run_practice(win: visual.Window) -> None:
     cumulative = {'total': 0.0, 'phase': 0.0}
     cumulative.update({d: 0.0 for d in PRACTICE_DOMAINS})
 
+    def _make_trial_domains(n: int) -> list:
+        """PRACTICE_DOMAINS를 순환해 n개의 도메인 리스트를 생성."""
+        cycle = math.ceil(n / len(PRACTICE_DOMAINS))
+        return (PRACTICE_DOMAINS * cycle)[:n]
+
     # ── Practice Phase 1 : competence task ───────────────────────────────────
-    _show_instruction(win, INST_PRACTICE_PHASE1)
+    show_instructions(win, INST_PRACTICE_PHASE1)
     cumulative['phase'] = 0.0
     for d in PRACTICE_DOMAINS:
         cumulative[d] = 0.0
 
-    for domain in PRACTICE_DOMAINS:
+    p1_domains = _make_trial_domains(PRACTICE_P1_TRIALS)
+    n_per_domain_p1 = math.ceil(PRACTICE_P1_TRIALS / len(PRACTICE_DOMAINS))
+    for domain in p1_domains:
         char_order = random.sample(data['animals'], len(data['animals']))
         result     = _run_phase1_trial(win, scene, data, char_order, domain)
         if result:
@@ -534,17 +531,19 @@ def run_practice(win: visual.Window) -> None:
                 phase_score=cumulative['phase'],
                 domain_scores={d: cumulative[d] for d in PRACTICE_DOMAINS},
                 block_domains=PRACTICE_DOMAINS,
-                n_trials_per_domain=1,
+                n_trials_per_domain=n_per_domain_p1,
                 score_ranges=data['score_ranges'],
             )
 
     # ── Practice Phase 2 : synergy task ──────────────────────────────────────
-    _show_instruction(win, INST_PRACTICE_PHASE2)
+    show_instructions(win, INST_PRACTICE_PHASE2)
     cumulative['phase'] = 0.0
     for d in PRACTICE_DOMAINS:
         cumulative[d] = 0.0
 
-    for domain in PRACTICE_DOMAINS:
+    p2_domains = _make_trial_domains(PRACTICE_P2_TRIALS)
+    n_per_domain_p2 = math.ceil(PRACTICE_P2_TRIALS / len(PRACTICE_DOMAINS))
+    for domain in p2_domains:
         char_order = random.sample(data['animals'], len(data['animals']))
         result     = _run_phase2_trial(win, scene, data, char_order, domain)
         if result:
@@ -559,7 +558,7 @@ def run_practice(win: visual.Window) -> None:
                 phase_score=cumulative['phase'],
                 domain_scores={d: cumulative[d] for d in PRACTICE_DOMAINS},
                 block_domains=PRACTICE_DOMAINS,
-                n_trials_per_domain=1,
+                n_trials_per_domain=n_per_domain_p2,
                 score_ranges=data['score_ranges'],
             )
 

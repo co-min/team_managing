@@ -121,18 +121,18 @@ INST_PHASE2 = """\
 # ─── Practice ────────────────────────────────────────────────────────────────
 PRACTICE_MODE    = True   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
 PRACTICE_DOMAINS = ['cooking', 'repairing']
+PRACTICE_P1_TRIALS = 2   # Phase 1 연습 총 trial 수 (도메인 순환)
+PRACTICE_P2_TRIALS = 2   # Phase 2 연습 총 trial 수 (도메인 순환)
 
 INST_PRACTICE_PHASE1 = (
     "연습 1단계: 능력치\n\n"
-    "화살표 키(↑ → ←)로 원하는 동물을 선택하고\n"
-    "[Space] 키로 확정하세요.\n\n"
+    "능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.\n\n"
     "[Space] 키를 눌러 시작"
 )
 
 INST_PRACTICE_PHASE2 = (
     "연습 2단계: 협력도\n\n"
-    "첫 번째 동물을 고르면 협력도 색이 나타납니다.\n"
-    "색을 참고해 두 번째 동물을 선택하세요.\n\n"
+    "능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.\n\n"
     "[Space] 키를 눌러 시작"
 )
 
