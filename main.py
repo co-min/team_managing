@@ -1,139 +1,75 @@
 import random
-import threading
-
 from psychopy import core
-
 from initiate import initiate
-from utils.inter_trial import run_gaussian_iti
-from function.config.settings import P1_TRIALS, P2_TRIALS, P3_TRIALS, INST_PHASE1, INST_PHASE2
+from function.config.settings import (
+    MISSION_MODE,
+    P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2,
+    DOMAINS, P2_DOMAINS, DOMAIN_ORDER,
+    PRACTICE_MODE,
+)
+from function.practice.practice_loop import run_practice
 from function.io.data_loader import load_all_data
-from function.io.frame_logger import make_frame_log, get_rows
-from function.io.frame_saver import save_frame_log
-from function.io.metadata import save_trial_metadata
-from function.io.path_builder import build_trial_save_dir
-from function.io.subject_csv import append_trial_row, append_frame_rows
 from function.config.window_factory import get_shared_factory
+from function.phases.block_runner import BlockConfig, run_block_trials
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
-from function.phases.phase3 import run_phase3_trial
-from function.phases.feedback import run_feedback
+from function.phases.feedback import P2_SCORE_RANGES
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 from utils.screen_utils import show_instructions
 
 
-DOMAINS = ['cooking', 'repairing', 'tennis']
+# Block 1/3/5: Synergy Infer, Competency Shown  → run_phase1_trial + competence data
+# Block 2/4/6: Synergy Shown, Competency Infer  → run_phase2_trial + synergy data
+BLOCK_PHASES = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 
 _SCHEDULE_SEED = 42
-_TRIG_FEEDBACK = {'phase_1': TRIG_P1_FEEDBACK, 'phase_2': TRIG_P2_FEEDBACK, 'phase_3': TRIG_P3_FEEDBACK}
+_FEEDBACK_TRIGGERS = {
+    'phase_1': TRIG_P1_FEEDBACK,
+    'phase_2': TRIG_P2_FEEDBACK,
+    'phase_3': TRIG_P3_FEEDBACK,
+}
 
 
-def _generate_schedules(animal_groups):
-    """
-    Build per-domain, per-phase lists of animal orderings.
+def _generate_block_schedules(animal_groups, block_phases):
+    """Build per-block trial schedules (one schedule per animal group)."""
+    rng = random.Random(_SCHEDULE_SEED)
+    schedules = []
+    for group, phase in zip(animal_groups, block_phases):
+        if MISSION_MODE == 3 and phase == 'phase_2':
+            n_trials, domains = P2_TRIALS, P2_DOMAINS
+        else:
+            n_trials, domains = P1_TRIALS, DOMAINS
 
-    animal_groups[g][s] = the s-th char_ani slot's animal in group g.
-    Each slot (A/B/C/D) independently cycles through its n_g animals
-    in balanced blocks, so every animal appears equally often.
+        trials_per_domain = n_trials // len(domains)
+        if DOMAIN_ORDER == 'sequential':
+            domain_sequence = [d for d in domains for _ in range(trials_per_domain)]
+        else:
+            domain_sequence = domains * trials_per_domain
+            rng.shuffle(domain_sequence)
 
-    Block structure: n_trials // n_g blocks, each block of n_g trials
-    contains each slot-animal exactly once (shuffled within the block).
-    Position order within each trial is also randomised.
-
-    Returns
-    -------
-    p1_schedule : {domain: [char_order_t0, ...]}  length = P1_TRIALS
-    p2_schedule : {domain: [char_order_t0, ...]}  length = P2_TRIALS
-    """
-    rng      = random.Random(_SCHEDULE_SEED)
-    n_g      = len(animal_groups)     # number of groups (3)
-    n_s      = len(animal_groups[0])  # number of char_ani slots (4)
-
-    # per_slot[s] = [animal_for_slot_s_in_group_0, group_1, group_2]
-    per_slot = [[animal_groups[g][s] for g in range(n_g)] for s in range(n_s)]
-
-    def make_schedule(n_trials):
-        order = []
-        for _ in range(n_trials // n_g):
-            # Each slot shuffles its n_g animals independently for this block
-            shuffled = [rng.sample(per_slot[s], n_g) for s in range(n_s)]
-            for t in range(n_g):
-                trial = [shuffled[s][t] for s in range(n_s)]
-                rng.shuffle(trial)   # randomise up/down/left/right positions
-                order.append(trial)
-        return order
-
-    p1 = {d: make_schedule(P1_TRIALS) for d in DOMAINS}
-    p2 = {d: make_schedule(P2_TRIALS) for d in DOMAINS}
-    # p3 = {d: make_schedule(P3_TRIALS) for d in DOMAINS}
-    # return p1, p2, p3
-    return p1, p2
+        schedules.append([
+            {'domain': d, 'char_order': rng.sample(group, len(group))}
+            for d in domain_sequence
+        ])
+    return schedules
 
 
-def _persist_trial(subject_id, record, rows, save_dir):
-    """Flush one trial's data to disk — runs in a background thread during the next ITI."""
-    append_trial_row(subject_id, record)
-    append_frame_rows(subject_id, rows)
-    save_frame_log(rows, save_dir)
-
-
-def _get_feedback_score(score, c1, c2, domain):
-    return score.get(tuple(sorted([c1, c2])), {}).get(domain, 0)
-
-
-def _run_phase_trials(
-    phase, n_trials, schedule, run_fn, data_dict,
-    domain, win, global_clock, subject_id, handle, cumul, score,
-):
-    """
-    Run all trials for one phase/domain pair.
-
-    File I/O for each trial is offloaded to a background thread so that
-    saving overlaps with the following ITI instead of blocking it.
-    The thread is joined after the ITI (before the next trial begins),
-    guaranteeing writes complete before the next save starts.
-    """
-    save_thread = None
-
-    for trial_i in range(n_trials):
-        char_order   = schedule[domain][trial_i]
-        stim_pair_id = f"{domain}_{phase}_t{trial_i:02d}"
-        frame_log    = make_frame_log(phase=phase, trial_id=trial_i, stim_pair_id=stim_pair_id)
-
-        run_gaussian_iti(win, global_clock, frame_log)  # saves from previous trial run here
-
-        if save_thread:
-            save_thread.join()  # must finish before this trial's saves can start
-
-        result = run_fn(win, global_clock, frame_log, data_dict, domain, char_order, handle)
-
-        fb_score = 0
-        if result:
-            fb_score = _get_feedback_score(score, result['choice1'], result['choice2'], domain)
-            cumul['total'] += fb_score
-            cumul['phase'] += fb_score
-            cumul[domain]  += fb_score
-            run_feedback(win, fb_score, domain,
-                         cumulative_score=cumul['total'],
-                         phase_score=cumul['phase'],
-                         domain_scores={d: cumul[d] for d in DOMAINS},
-                         n_trials_per_domain=n_trials,
-                         handle=handle, trig_code=_TRIG_FEEDBACK[phase])
-
-        _, record = save_trial_metadata(
-            subject_id=subject_id, phase=phase, domain=domain,
-            trial_id=trial_i, stim_pair_id=stim_pair_id,
-            char_order=char_order, result=result, feedback_score=fb_score,
-            elapsed_time=global_clock.getTime(),
+def _get_block_config(phase, competence, synergy, score, phase2_score) -> BlockConfig:
+    if phase == 'phase_1':
+        return BlockConfig(
+            trial_runner=run_phase1_trial,
+            data_dict=competence,
+            block_domains=DOMAINS,
+            score_data=score,
+            score_ranges=None,
         )
-        rows     = get_rows(frame_log)
-        save_dir = build_trial_save_dir(subject_id, phase, domain, stim_pair_id)
-        save_thread = threading.Thread(
-            target=_persist_trial, args=(subject_id, record, rows, save_dir), daemon=True,
-        )
-        save_thread.start()
-
-    if save_thread:
-        save_thread.join()  # last trial's saves must complete before phase ends
+    return BlockConfig(
+        trial_runner=run_phase2_trial,
+        data_dict=synergy,
+        block_domains=P2_DOMAINS if MISSION_MODE == 3 else DOMAINS,
+        score_data=phase2_score if MISSION_MODE == 3 else score,
+        score_ranges=P2_SCORE_RANGES if MISSION_MODE == 3 else None,
+    )
 
 
 def main() -> None:
@@ -143,31 +79,30 @@ def main() -> None:
     handle       = ctx.handle
     global_clock = core.Clock()
 
-    competence, synergy, score, animal_groups = load_all_data()
+    if PRACTICE_MODE:
+        run_practice(win)
+
+    competence, synergy, score, animal_groups, phase2_score = load_all_data()
     get_shared_factory(win, animal_groups)
-    p1_schedule, p2_schedule = _generate_schedules(animal_groups)
-    cumul = {'total': 0, 'phase': 0, 'cooking': 0, 'repairing': 0, 'tennis': 0}
+    block_schedules = _generate_block_schedules(animal_groups, BLOCK_PHASES)
+    cumulative = {'total': 0, 'phase': 0, **{d: 0 for d in DOMAINS}}
 
-    # instruction phase1
-    show_instructions(win, INST_PHASE1)
+    for block_index, (phase, block_schedule) in enumerate(zip(BLOCK_PHASES, block_schedules)):
+        cfg = _get_block_config(phase, competence, synergy, score, phase2_score)
+        instruction = INST_PHASE1 if phase == 'phase_1' else INST_PHASE2
+        show_instructions(win, instruction.format(
+            block_num=block_index + 1, total_blocks=len(BLOCK_PHASES)
+        ))
 
-    # Phase 1: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
-    cumul['phase'] = 0
-    for domain in DOMAINS:
-        _run_phase_trials('phase_1', P1_TRIALS, p1_schedule, run_phase1_trial,
-                            competence, domain, win, global_clock, subject_id, handle, cumul, score)
+        cumulative['phase'] = 0
+        for d in DOMAINS:
+            cumulative[d] = 0
 
-    # instruction phase2
-    show_instructions(win, INST_PHASE2)
-
-    # Phase 2: domain 1, 2, 3 순서로 각 18 trials (총 54 trials)
-    cumul['phase'] = 0
-    for d in DOMAINS:
-        cumul[d] = 0
-    for domain in DOMAINS:
-        _run_phase_trials('phase_2', P2_TRIALS, p2_schedule, run_phase2_trial,
-                            synergy, domain, win, global_clock, subject_id, handle, cumul, score)
-
+        run_block_trials(
+            block_index, phase, block_schedule, cfg,
+            win, global_clock, subject_id, handle, cumulative,
+            feedback_trig=_FEEDBACK_TRIGGERS[phase],
+        )
 
     win.close()
     core.quit()

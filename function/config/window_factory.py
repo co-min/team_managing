@@ -9,7 +9,7 @@ monitor profiles or resolution without touching phase logic.
 from psychopy import visual, monitors
 from function.config.settings import (
     WINDOW_SIZE, WINDOW_UNITS, WINDOW_FULLSCR,
-    BACKGROUND_COLOR, MONITOR_NAME, SCREEN_NUMBER,
+    BACKGROUND_COLOR, MONITOR_NAME, SCREEN_NUMBER, DOMAINS,
 )
 
 
@@ -60,7 +60,7 @@ class VisualObjectFactory:
                         'img': f'image/objectives/{animal}.png',
                     }
         else:
-            # 폴백: 하드코딩된 12마리 (하위 호환성 유지)
+            # 폴백: 하드코딩된 24마리 6그룹 (하위 호환성 유지)
             self.char_info = {
                 # Group 0
                 'duck':    {'pos': _slot_defaults[0], 'img': 'image/objectives/duck.png'},
@@ -73,10 +73,25 @@ class VisualObjectFactory:
                 'chicken': {'pos': _slot_defaults[2], 'img': 'image/objectives/chicken.png'},
                 'cow':     {'pos': _slot_defaults[3], 'img': 'image/objectives/cow.png'},
                 # Group 2
-                # 'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
-                # 'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
-                # 'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
-                # 'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+                'horse':   {'pos': _slot_defaults[0], 'img': 'image/objectives/horse.png'},
+                'koala':   {'pos': _slot_defaults[1], 'img': 'image/objectives/koala.png'},
+                'lion':    {'pos': _slot_defaults[2], 'img': 'image/objectives/lion.png'},
+                'tiger':   {'pos': _slot_defaults[3], 'img': 'image/objectives/tiger.png'},
+                # Group 3
+                'deer':     {'pos': _slot_defaults[0], 'img': 'image/objectives/deer.png'},
+                'dog':      {'pos': _slot_defaults[1], 'img': 'image/objectives/dog.png'},
+                'elephant': {'pos': _slot_defaults[2], 'img': 'image/objectives/elephant.png'},
+                'fish':     {'pos': _slot_defaults[3], 'img': 'image/objectives/fish.png'},
+                # Group 4
+                'fox':   {'pos': _slot_defaults[0], 'img': 'image/objectives/fox.png'},
+                'hippo': {'pos': _slot_defaults[1], 'img': 'image/objectives/hippo.png'},
+                'kappa': {'pos': _slot_defaults[2], 'img': 'image/objectives/kappa.png'},
+                'mouse': {'pos': _slot_defaults[3], 'img': 'image/objectives/mouse.png'},
+                # Group 5
+                'otter':   {'pos': _slot_defaults[0], 'img': 'image/objectives/otter.png'},
+                'seal':    {'pos': _slot_defaults[1], 'img': 'image/objectives/seal.png'},
+                'sealion': {'pos': _slot_defaults[2], 'img': 'image/objectives/sealion.png'},
+                'sheep':   {'pos': _slot_defaults[3], 'img': 'image/objectives/sheep.png'},
             }
 
         self.char_list = list(animal_groups[0]) if animal_groups else ['duck', 'frog', 'panda', 'rabbit']
@@ -93,12 +108,14 @@ class VisualObjectFactory:
         self._domain_size = layout['domain_size']
         self._domain_y    = layout['domain_y']
 
-        self.domain_stim = None
+        self.domain_stims: dict = {}
+        self._current_domain: str = DOMAINS[0]
         self.animal_stims = {}
         self.border_stims = {}
         self.block_stims = {}
         self.overlay_stims = {}
         self._locked_chars: set = set()
+        self._border_colors: dict = {}
 
         self._create_ui_elements()
 
@@ -147,11 +164,13 @@ class VisualObjectFactory:
     def _create_ui_elements(self):
         """실험 시작 시 UI 요소들을 메모리에 고속 생성합니다."""
         ds = self._domain_size
-        self.domain_stim = visual.ImageStim(
-            win=self.win,
-            pos=(0, self._domain_y),
-            size=(ds, ds)
-        )
+        for domain in DOMAINS:
+            self.domain_stims[domain] = visual.ImageStim(
+                win=self.win,
+                image=f"image/domains/{domain}.png",
+                pos=(0, self._domain_y),
+                size=(ds, ds),
+            )
 
         az = self._animal_size
         bz = az + 10   # 테두리는 동물 이미지보다 3px 크게
@@ -199,19 +218,28 @@ class VisualObjectFactory:
             )
 
     def update_domain(self, domain_name):
-        """시행(Trial) 시작 시 상단 도메인 질문 이미지(cooking, repairing, tennis)를 바꿉니다."""
-        img_path = f"image/domains/{domain_name}.png"
-        self.domain_stim.setImage(img_path)
+        """시행(Trial) 시작 시 상단 도메인 질문 이미지를 전환합니다 (preloaded)."""
+        self._current_domain = domain_name
 
     def reset_ui_states(self):
         """매 Trial 시작 전 모든 테두리와 블록 색상을 초기 상태로 깨끗하게 청소합니다."""
         self._locked_chars.clear()
         for char_name in self.char_list:
-            self.border_stims[char_name].setLineColor('white')
+            self._border_colors[char_name] = 'white'
             self.border_stims[char_name].lineWidth = 6
-            self.border_stims[char_name].opacity = 0
+            self.border_stims[char_name].setLineColor(None)  # opacity 대신 lineColor=None으로 완전 은닉
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0
+
+    def set_border_color(self, char_name: str, color) -> None:
+        """테두리 색상을 저장만 하고, 표시 여부는 show/hide_border로 제어합니다."""
+        self._border_colors[char_name] = color
+
+    def show_border(self, char_name: str) -> None:
+        self.border_stims[char_name].lineColor = self._border_colors.get(char_name, 'white')
+
+    def hide_border(self, char_name: str) -> None:
+        self.border_stims[char_name].lineColor = None
 
     def set_animal_locked(self, char_name: str, locked: bool) -> None:
         """Choice 1 확정 시 동물 이미지 위에 OVERLAY를 activate/disactivate 합니다."""
@@ -243,7 +271,7 @@ class VisualObjectFactory:
         """
         DOMAIN QUESTION과 ANIMALS를 순서대로 RENDERING합니다.
         """
-        self.domain_stim.draw()
+        self.domain_stims[self._current_domain].draw()
 
         show_blocks = phase_type == 'phase2'
         for char_name in self.char_list:

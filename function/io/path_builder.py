@@ -1,4 +1,4 @@
-﻿"""
+"""
 path_builder.py
 ---------------
 Single source of truth for all result-directory paths.
@@ -10,35 +10,16 @@ data/
     trials.csv
     frames.csv
     summary.json
-    phase_1/
-      domain_1/
-        {stim_pair_id}/
-          metadata.json
-          frame_log.csv
-      domain_2/
-        {stim_pair_id}/
-          metadata.json
-          frame_log.csv
-      domain_3/
-        {stim_pair_id}/
-          metadata.json
-          frame_log.csv
-    phase_2/
-      domain_1/ ...
-    phase_3/
-      domain_1/ ...
+    block_{block_i}/
+      {phase}/
+        {domain}/
+          {stim_pair_id}/
+            metadata.json
+            frame_log.csv
 """
 
 from pathlib import Path
 from function.config.settings import DATA_DIR
-
-
-# ── Phase folder names ────────────────────────────────────────────────────────
-PHASE_DIR_NAMES = {
-    "phase_1": "phase_1",
-    "phase_2": "phase_2",
-    "phase_3": "phase_3",
-}
 
 
 def get_subject_dir(subject_id: str) -> Path:
@@ -48,35 +29,37 @@ def get_subject_dir(subject_id: str) -> Path:
 
 def build_trial_save_dir(
     subject_id: str,
+    block_i: int,
     phase: str,
     domain: str,
     stim_pair_id: str,
 ) -> Path:
     """
-    Construct (but do not create) the save directory for one trial/phase.
+    Construct (but do not create) the save directory for one trial.
 
     Parameters
     ----------
     subject_id   : e.g. "001"
-    phase        : one of "phase_1", "phase_2", "phase_3"
-    domain       : one of "domain_1", "domain_2", "domain_3"
-    stim_pair_id : e.g. "pair_001"
+    block_i      : 0-indexed block number (0–5)
+    phase        : one of "phase_1", "phase_2"
+    domain       : one of "cooking", "repairing", "tennis"
+    stim_pair_id : e.g. "block0_phase_1_t00"
 
     Returns
     -------
-    Path  e.g. data/sub-001/phase_1/domain_1/pair_001/
+    Path  e.g. data/sub-001/block_0/phase_1/cooking/block0_phase_1_t00/
     """
-    phase_dir = PHASE_DIR_NAMES.get(phase, phase)
-    return get_subject_dir(subject_id) / phase_dir / domain / stim_pair_id
+    return get_subject_dir(subject_id) / f"block_{block_i}" / phase / domain / stim_pair_id
 
 
 def ensure_trial_save_dir(
     subject_id: str,
+    block_i: int,
     phase: str,
     domain: str,
     stim_pair_id: str,
 ) -> Path:
     """Same as build_trial_save_dir but also creates the directory."""
-    p = build_trial_save_dir(subject_id, phase, domain, stim_pair_id)
+    p = build_trial_save_dir(subject_id, block_i, phase, domain, stim_pair_id)
     p.mkdir(parents=True, exist_ok=True)
     return p

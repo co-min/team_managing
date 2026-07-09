@@ -20,52 +20,52 @@ from utils.labjack_trigger import (
 
 
 
-def _run_choice_loop(win, factory, kb, rec, char_list, handle,
+def _run_choice_loop(win, factory, keyboard, recorder, char_list, handle,
                      stim_trig, choice_trig_base,
                      excluded_idx=None, locked_border_idx=None):
     """Arrow-key preview + space-to-confirm loop for Phase 3.
 
     Returns (chosen_idx, char_code, rt) on confirm, or (None, None, None) on timeout.
     """
-    clock = core.Clock()
-    preview_idx = None
+    response_clock = core.Clock()
+    preview_idx    = None
     stim_triggered = False
 
     while True:
         check_escape(win)
 
-        for pressed, t in event.getKeys(keyList=kb.valid_keys + ['space'], timeStamped=clock):
+        for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space'], timeStamped=response_clock):
             if pressed == 'space' and preview_idx is not None:
-                code = _CHAR_CODE[char_list[preview_idx]]
-                send_trigger(handle, choice_trig_base + ANIMAL_IDX[code])
+                chosen_code = _CHAR_CODE[char_list[preview_idx]]
+                send_trigger(handle, choice_trig_base + ANIMAL_IDX[char_list[preview_idx]])
                 factory.draw_base_scene(phase_type='phase3')
-                kb.draw()
+                keyboard.draw()
                 win.flip()
                 core.wait(0.15)
-                rec.log_final(win, {'response': True})
-                return preview_idx, code, t
+                recorder.log_final(win, {'response': True})
+                return preview_idx, chosen_code, t
             elif pressed != 'space':
-                kb.reset_colors()
-                idx = kb.select(pressed, excluded_idx=excluded_idx)
-                if idx is not None:
-                    preview_idx = idx
+                keyboard.reset_colors()
+                arrow_idx = keyboard.select(pressed, excluded_idx=excluded_idx)
+                if arrow_idx is not None:
+                    preview_idx = arrow_idx
                     for name in char_list:
                         factory.border_stims[name].opacity = 0
                     if locked_border_idx is not None:
                         factory.border_stims[char_list[locked_border_idx]].opacity = 1
-                    factory.border_stims[char_list[idx]].opacity = 1
+                    factory.border_stims[char_list[arrow_idx]].opacity = 1
 
-        if MAX_RESPONSE_TIME and clock.getTime() > MAX_RESPONSE_TIME:
-            rec.log_final(win, {'response': False})
+        if MAX_RESPONSE_TIME and response_clock.getTime() > MAX_RESPONSE_TIME:
+            recorder.log_final(win, {'response': False})
             return None, None, None
 
         factory.draw_base_scene(phase_type='phase3')
-        kb.draw()
+        keyboard.draw()
         if not stim_triggered:
             win.callOnFlip(send_trigger_async, handle, stim_trig)
             win.callOnFlip(reset_trigger, handle)
             stim_triggered = True
-        rec.flip_and_log(win)
+        recorder.flip_and_log(win)
 
 
 def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, handle=None):
@@ -93,15 +93,15 @@ def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, ha
     factory.update_domain(domain)
     factory.reset_ui_states()
 
-    kb  = ArrowKeyboard(win, pos=(0, factory.center_y))
-    rec = FrameRecorder(frame_log, global_clock)
+    keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
+    recorder = FrameRecorder(frame_log, global_clock)
 
     send_trigger(handle, TRIG_P3_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
-    kb.reset_colors()
+    keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
-        win, factory, kb, rec, char_list, handle,
+        win, factory, keyboard, recorder, char_list, handle,
         TRIG_P3_STIMULUS, TRIG_P3_CHOICE1,
     )
     if choice1_code is None:
@@ -113,12 +113,12 @@ def run_phase3_trial(win, global_clock, frame_log, _data, domain, char_order, ha
     for name in char_list:
         factory.border_stims[name].opacity = 0
     factory.border_stims[char_list[choice1_idx]].opacity = 1
-    rec.start_segment()
-    kb.reset_colors()
-    kb.set_excluded(choice1_idx)
+    recorder.start_segment()
+    keyboard.reset_colors()
+    keyboard.set_excluded(choice1_idx)
 
     _, choice2_code, rt2 = _run_choice_loop(
-        win, factory, kb, rec, char_list, handle,
+        win, factory, keyboard, recorder, char_list, handle,
         TRIG_P3_STIMULUS, TRIG_P3_CHOICE2,
         excluded_idx=choice1_idx,
         locked_border_idx=choice1_idx,
