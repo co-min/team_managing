@@ -217,7 +217,7 @@ def run_feedback(
     domain_score_stims = []
     if domain_scores:
         for d, x in domain_xs.items():
-            val   = int(domain_scores.get(d, 0))
+            val   = float(domain_scores.get(d, 0))
             color = "#FF9800" if d == domain else "#AAAAAA"
             domain_score_stims.append(visual.TextStim(
                 win, text=f"{domain_ko[d]}: {val}점",

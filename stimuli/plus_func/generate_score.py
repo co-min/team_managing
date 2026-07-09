@@ -55,7 +55,7 @@ def generate_score_table(competence, pairs, domains):
         row = {'pair_id': p['pair_id'], 'char1': c1, 'char2': c2}
         for d in domains:
             # score = synergy + (competency_char1 + competency_char2)
-            row[f'sc_{d}'] = syn * (competence[c1][d] + competence[c2][d])
+            row[f'sc_{d}'] = syn + (competence[c1][d] + competence[c2][d])
         rows.append(row)
     return rows
 

@@ -1,7 +1,7 @@
 pair_id, char1, char2, synergy_score
-1,A,B,1.5
-2,A,C,2
-3,A,D,1
-4,B,C,1
-5,B,D,2
-6,C,D,1.5
+1,A,B,1
+2,A,C,1.4
+3,A,D,0.8
+4,B,C,0.8
+5,B,D,1.4
+6,C,D,1
