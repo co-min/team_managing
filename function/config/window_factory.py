@@ -125,24 +125,24 @@ class VisualObjectFactory:
         half_h = H // 2
 
         # 도메인 이미지 (상단, 정사각형)
-        domain_size   = int(H * 0.155)
+        domain_size   = int(H * 0.185)
         domain_y      = half_h - domain_size // 2 - 20
         domain_bottom = domain_y - domain_size // 2
 
         # 동물 이미지 크기 및 십자 배치 거리
-        animal_size = int(H * 0.148)
-        animal_v    = int(H * 0.180)   # 중심으로부터 상하 거리
-        animal_h    = int(W * 0.138)   # 중심으로부터 좌우 거리
+        animal_size = int(H * 0.180)
+        animal_v    = int(H * 0.210)   # 중심으로부터 상하 거리
+        animal_h    = int(W * 0.158)   # 중심으로부터 좌우 거리
 
         # 동물 십자 전체를 아래로 내려 도메인 질문과의 간격 확보
-        center_y = -int(H * 0.09)
+        center_y = -int(H * 0.13)
 
         # 상단 동물이 도메인 이미지 하단과 최소 25px 간격 유지 (center_y 반영)
         max_v    = domain_bottom - animal_size // 2 - 25 - center_y
         animal_v = min(animal_v, max_v)
 
         # 스코어 블록 크기
-        block_h = int(H * 0.042)
+        block_h = int(H * 0.050)
         block_w = animal_size + 20
 
         # 스코어 블록: 동물 외곽(바깥쪽)에 배치, 도메인과 10px 이상 여백 유지
