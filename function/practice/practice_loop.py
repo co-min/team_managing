@@ -37,37 +37,56 @@ from utils.screen_utils import show_instructions
 _PRACTICE_DIR = Path(__file__).parent
 _IMAGE_DIR    = _PRACTICE_DIR / "image"
 
-_ANIMAL_SIZE  = 150    # px — animal image width and height
 _BORDER_EXTRA = 12     # border extends this many px beyond animal image
-
-# Synergy block (bar) dimensions — narrow rectangle, like phase2
-_BLOCK_HEIGHT       = 30
-_BLOCK_WIDTH        = _ANIMAL_SIZE + 20
-_BLOCK_OFFSET_DY    = _ANIMAL_SIZE // 2 + 10 + _BLOCK_HEIGHT // 2  # center-to-center gap
-_BLOCK_SLOT_OFFSETS = [(0, _BLOCK_OFFSET_DY)] * 3   # bar appears above every slot
-
-# 3-slot positions: top, right, left  (no bottom slot for 3-animal mode)
-_SLOT_POSITIONS = [(0, 150), (250, -80), (-250, -80)]
 
 # Arrow key → slot index  (down arrow is not used)
 _KEY_TO_SLOT = {'up': 0, 'right': 1, 'left': 2}
 
-# Arrow triangle: (x, y, rotation_deg)
-_ARROW_DEFS = [
-    (0,    -230, 0  ),   # up
-    (60,   -290, 90 ),   # right
-    (-60,  -290, 270),   # left
-]
-_ARROW_RADIUS = 30
 _COLOR_IDLE   = '#0055ff'
 _COLOR_HOVER  = '#00d9ff'
 _COLOR_LOCKED = '#00d9ff'
 
 _RESPONSE_LIMIT = MAX_RESPONSE_TIME
 
-# Domain image layout
-_DOMAIN_POS  = (0, 370)
-_DOMAIN_SIZE = (130, 130)
+
+def _compute_practice_layout(win) -> dict:
+    """Compute all size/position values proportional to the window size."""
+    W, H = win.size
+    half_h = H // 2
+    half_w = W // 2
+
+    animal_size = int(H * 0.140)
+    domain_size = int(H * 0.190)
+    domain_y    = int(half_h * 0.78)
+
+    slot_top_y  = int(half_h * 0.13)
+    slot_side_x = int(half_w * 0.300)
+    slot_side_y = -int(half_h * 0.27)
+
+    block_h         = int(H * 0.050)
+    block_w         = animal_size + 20
+    block_offset_dy = animal_size // 2 + 10 + block_h // 2
+
+    arrow_radius = int(H * 0.028)
+    arrow_y_up   = -int(half_h * 0.38)
+    arrow_side_x = int(half_w * 0.063)
+    arrow_side_y = -int(half_h * 0.48)
+
+    return dict(
+        animal_size        = animal_size,
+        domain_size        = domain_size,
+        domain_y           = domain_y,
+        slot_positions     = [(0, slot_top_y), (slot_side_x, slot_side_y), (-slot_side_x, slot_side_y)],
+        block_h            = block_h,
+        block_w            = block_w,
+        block_slot_offsets = [(0, block_offset_dy)] * 3,
+        arrow_defs         = [
+            (0,             arrow_y_up,   0  ),
+            ( arrow_side_x, arrow_side_y, 90 ),
+            (-arrow_side_x, arrow_side_y, 270),
+        ],
+        arrow_radius       = arrow_radius,
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -143,13 +162,16 @@ class _PracticeScene:
     """
 
     def __init__(self, win: visual.Window, data: dict):
-        az = _ANIMAL_SIZE
+        layout = _compute_practice_layout(win)
+        az = layout['animal_size']
         bz = az + _BORDER_EXTRA
 
-        self._char_order: list     = data['animals'][:]
-        self._locked: set          = set()
-        self._border_colors: dict  = {}
-        self._current_domain: str  = ''
+        self._slot_positions     = layout['slot_positions']
+        self._block_slot_offsets = layout['block_slot_offsets']
+        self._char_order: list   = data['animals'][:]
+        self._locked: set        = set()
+        self._border_colors: dict = {}
+        self._current_domain: str = ''
 
         self.animal_stims = {
             animal: visual.ImageStim(
@@ -166,7 +188,7 @@ class _PracticeScene:
         }
         self.block_stims = {
             animal: visual.Rect(
-                win, width=_BLOCK_WIDTH, height=_BLOCK_HEIGHT,
+                win, width=layout['block_w'], height=layout['block_h'],
                 fillColor=None, lineColor=None, opacity=0, units='pix',
             )
             for animal in data['animals']
@@ -180,16 +202,17 @@ class _PracticeScene:
         }
         self.arrow_stims = [
             visual.Polygon(
-                win, edges=3, radius=_ARROW_RADIUS,
+                win, edges=3, radius=layout['arrow_radius'],
                 pos=(dx, dy), ori=ori,
                 fillColor=_COLOR_IDLE, lineColor=None,
             )
-            for dx, dy, ori in _ARROW_DEFS
+            for dx, dy, ori in layout['arrow_defs']
         ]
         self.domain_stims = {
             domain: visual.ImageStim(
                 win, image=f"image/domains/{domain}.png",
-                pos=_DOMAIN_POS, size=_DOMAIN_SIZE,
+                pos=(0, layout['domain_y']),
+                size=(layout['domain_size'], layout['domain_size']),
             )
             for domain in PRACTICE_DOMAINS
         }
@@ -205,11 +228,11 @@ class _PracticeScene:
         """Assign each animal to one of the 3 display slots."""
         self._char_order = list(char_order)
         for slot, animal in enumerate(char_order):
-            pos = _SLOT_POSITIONS[slot]
+            pos = self._slot_positions[slot]
             for stim in (self.animal_stims[animal], self.border_stims[animal],
                          self.overlay_stims[animal]):
                 stim.setPos(pos)
-            dx, dy = _BLOCK_SLOT_OFFSETS[slot]
+            dx, dy = self._block_slot_offsets[slot]
             self.block_stims[animal].setPos((pos[0] + dx, pos[1] + dy))
 
     # ── state reset ───────────────────────────────────────────────────────────

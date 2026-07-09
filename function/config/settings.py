@@ -56,7 +56,7 @@ else:  # MISSION_MODE == 3
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
 WINDOW_UNITS     = "pix"
-WINDOW_FULLSCR   = False          # Set True for actual experiment
+WINDOW_FULLSCR   = True          # Set True for actual experiment
 BACKGROUND_COLOR = "#2b2b2b"      # Dark gray matching PDF screenshots
 MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 1
@@ -82,8 +82,8 @@ WHITE_COLOR = "white"
 GREEN_COLOR = "green"
 
 # --- Event Keys ---
-ARROW_OFFSET = 60
-ARROW_RADIUS = 30
+ARROW_OFFSET = 70
+ARROW_RADIUS = 40
 
 
 # --- Feed back ---
@@ -119,7 +119,7 @@ INST_PHASE2 = """\
 
 
 # ─── Practice ────────────────────────────────────────────────────────────────
-PRACTICE_MODE    = True   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
+PRACTICE_MODE    = False   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
 PRACTICE_DOMAINS = ['cooking', 'repairing']
 PRACTICE_P1_TRIALS = 4   # Phase 1 연습 총 trial 수 
 PRACTICE_P2_TRIALS = 4   # Phase 2 연습 총 trial 수
