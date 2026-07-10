@@ -1,245 +1,240 @@
 """
-Performance figure for synergy/compositionality task.
+Usage:
+    python analysis/plot_performance.py sub-001
+    python analysis/plot_performance.py 001
 
-Layout (per phase):
-  ┌──────────────────────────────────────────────────────────┐
-  │  Cumulative score lines (3 domains) + 85% threshold      │
-  │  Dashed diagonal = running max possible (n × 10 → 180)   │
-  │  Scatter markers = per-trial score (RdYlGn colour map)   │
-  ├──────────────────────────────────────────────────────────┤
-  │  Response strip: coloured tiles + 1st-choice animal abbr │
-  └──────────────────────────────────────────────────────────┘
+Two PNG files are saved to data/<sub>/:
+  plot_phase1.png  —  Phase 1 (blocks 1, 3, 5)
+  plot_phase2.png  —  Phase 2 (blocks 2, 4, 6)
 
-Criterion note
---------------
-• Cumulative 85% (threshold=153): overall competency check at block end.
-• Rolling 5-trial mean ≥ 8.5 (plotted as thin line on right y-axis):
-  shows WHERE in the block learning stabilised — more sensitive than
-  the end-of-block cumulative criterion.
+Data format support:
+  New format  stim_pair_id = block{N}_phase_{1,2}_t{NN}  → actual block numbers used
+  Old format  stim_pair_id = {domain}_phase_{1,2}_t{NN}  → domain mapped to virtual blocks
+              (cooking→1/2, repairing→3/4, tennis→5/6)
 """
 
 import sys
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as mpatches
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
-import numpy as np
+import re
+import argparse
 from pathlib import Path
 
-# ── configuration ──────────────────────────────────────────────────────────────
-SUBJECT_ID   = sys.argv[1] if len(sys.argv) > 1 else "sub-003"
-ROOT         = Path(__file__).parent.parent
-DATA_PATH    = ROOT / "data" / SUBJECT_ID / "trials.csv"
-OUT_PATH     = ROOT / "data" / SUBJECT_ID / "performance_figure.png"
+import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 
-MAX_SCORE        = 10
-N_TRIALS_DOMAIN  = 18
-MAX_CUMULATIVE   = MAX_SCORE * N_TRIALS_DOMAIN   # 180
-THRESHOLD_PCT    = 0.85
-THRESHOLD        = THRESHOLD_PCT * MAX_CUMULATIVE  # 153
+ROOT = Path(__file__).resolve().parents[1]
 
-ROLL_WINDOW = 5    # trials for rolling mean criterion
-
-DOMAINS = ["cooking", "repairing", "tennis"]
-PHASES  = ["phase_1", "phase_2"]
-PHASE_LABELS = {
-    "phase_1": "Phase 1 – Competency",
-    "phase_2": "Phase 2 – Synergy",
+DOMAIN_COLOR = {
+    "cooking":   "#E8813A",
+    "repairing": "#4A90D9",
+    "tennis":    "#5DB85D",
+}
+DOMAIN_ABBR = {
+    "cooking":   "Ck",
+    "repairing": "Rp",
+    "tennis":    "Tn",
 }
 
-DOMAIN_COLORS  = {"cooking": "#D9603B", "repairing": "#3D7DC8", "tennis": "#3BA35A"}
-SCORE_CMAP     = "RdYlGn"
+# Phase 1 blocks (1-indexed): 1, 3, 5
+# Phase 2 blocks (1-indexed): 2, 4, 6
+PHASE1_BLOCK_LABELS = [1, 3, 5]
+PHASE2_BLOCK_LABELS = [2, 4, 6]
 
-ANIMAL_ABBR = {
-    "cat": "CAT", "panda": "PAN", "duck": "DUK", "rabbit": "RAB",
-    "frog": "FRO", "chicken": "CHK", "cow": "COW", "bear": "BEA",
+# Old-format: domain → virtual block label
+#   Phase 1: cooking=1, repairing=3, tennis=5
+#   Phase 2: cooking=2, repairing=4, tennis=6
+OLD_FMT_BLOCK = {
+    ("phase_1", "cooking"):   1,
+    ("phase_1", "repairing"): 3,
+    ("phase_1", "tennis"):    5,
+    ("phase_2", "cooking"):   2,
+    ("phase_2", "repairing"): 4,
+    ("phase_2", "tennis"):    6,
 }
 
-# ── load ───────────────────────────────────────────────────────────────────────
-df = pd.read_csv(DATA_PATH)
-df["trial_x"] = df["global_trial_id"] + 1   # 1-indexed for display
+_BLOCK_RE = re.compile(r"^block(\d+)_")
+_OLD_RE   = re.compile(r"^(cooking|repairing|tennis)_phase_")
 
-norm = Normalize(vmin=0, vmax=MAX_SCORE)
-cmap = plt.get_cmap(SCORE_CMAP)
 
-# ── figure ─────────────────────────────────────────────────────────────────────
-fig = plt.figure(figsize=(22, 12))
-fig.suptitle(
-    f"Cumulative Performance by Domain — {SUBJECT_ID.replace('-', ' ').upper()}",
-    fontsize=14, fontweight="bold", y=0.99,
-)
+def assign_block_label(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Detect which format the stim_pair_id uses and assign block_label (1-indexed).
+    New format: block{N}_phase_*  →  block_label = N + 1
+    Old format: {domain}_phase_*  →  virtual block from OLD_FMT_BLOCK
+    Mixed: each row is handled individually.
+    Returns a filtered copy (rows with a valid block_label only).
+    """
+    labels = []
+    for _, row in df.iterrows():
+        sid = str(row["stim_pair_id"])
+        m = _BLOCK_RE.match(sid)
+        if m:
+            labels.append(int(m.group(1)) + 1)
+        elif _OLD_RE.match(sid):
+            key = (row["phase"], row["domain"])
+            labels.append(OLD_FMT_BLOCK.get(key))
+        else:
+            labels.append(None)
 
-outer_gs = gridspec.GridSpec(2, 1, figure=fig, hspace=0.42)
+    df = df.copy()
+    df["block_label"] = labels
+    return df[df["block_label"].notna()].copy()
 
-for row_idx, phase in enumerate(PHASES):
-    phase_df = df[df["phase"] == phase].copy()
-    x_start  = int(phase_df["trial_x"].min())
-    x_end    = int(phase_df["trial_x"].max())
 
-    inner_gs = gridspec.GridSpecFromSubplotSpec(
-        2, 1, subplot_spec=outer_gs[row_idx],
-        height_ratios=[5, 1], hspace=0.06,
+def xtick_label(row) -> str:
+    abbr = DOMAIN_ABBR.get(row["domain"], row["domain"][:2].title())
+    a1 = row.get("choice1_animal")
+    a2 = row.get("choice2_animal")
+    if pd.isna(a1) or pd.isna(a2):
+        return f"{abbr}\n(no resp.)"
+    return f"{abbr}\n{a1}+{a2}"
+
+
+def plot_block(ax, block_df: pd.DataFrame, block_label: int,
+               best_score_by_domain: dict):
+    """Draw one subplot for a single block."""
+    ax.set_title(f"Block {block_label}", fontsize=11, fontweight="bold", pad=6)
+
+    if block_df.empty:
+        ax.text(0.5, 0.5, "No data", ha="center", va="center",
+                transform=ax.transAxes, fontsize=10, color="gray")
+        ax.set_axis_off()
+        return
+
+    block_df = block_df.reset_index(drop=True)
+    n = len(block_df)
+
+    # ── Best-score reference lines per domain ──────────────────────────────
+    present_domains = block_df["domain"].unique()
+    drawn_domains: set[str] = set()
+    for domain in present_domains:
+        if domain not in best_score_by_domain:
+            continue
+        best = best_score_by_domain[domain]
+        color = DOMAIN_COLOR.get(domain, "gray")
+        ax.axhline(best, color=color, linewidth=1.4, linestyle="--",
+                   alpha=0.85, zorder=1)
+        drawn_domains.add(domain)
+
+    # ── Score dots ─────────────────────────────────────────────────────────
+    for i, row in block_df.iterrows():
+        color = DOMAIN_COLOR.get(row["domain"], "gray")
+        score = row["feedback_score"]
+        if pd.isna(score):
+            ax.scatter(i, 0, marker="x", color="crimson", s=60,
+                       linewidths=1.5, zorder=3)
+        else:
+            ax.scatter(i, score, color=color, s=70, zorder=3,
+                       edgecolors="white", linewidths=0.6)
+            ax.text(i, score + 0.25, f"{score:.0f}",
+                    ha="center", va="bottom", fontsize=6.5, color=color)
+
+    # ── X-axis labels ──────────────────────────────────────────────────────
+    labels = [xtick_label(row) for _, row in block_df.iterrows()]
+    ax.set_xticks(np.arange(n))
+    ax.set_xticklabels(labels, rotation=45, ha="right",
+                       fontsize=6.5, linespacing=1.3)
+
+    # ── Axes styling ───────────────────────────────────────────────────────
+    ax.set_xlim(-0.7, n - 0.3)
+    ax.set_ylim(0, 12)
+    ax.set_yticks(range(0, 13, 2))
+    ax.set_ylabel("Score", fontsize=9)
+    ax.grid(axis="y", alpha=0.3, linewidth=0.8)
+    ax.spines[["top", "right"]].set_visible(False)
+
+    # ── Best-score right-edge annotation ───────────────────────────────────
+    for domain in drawn_domains:
+        best = best_score_by_domain[domain]
+        color = DOMAIN_COLOR.get(domain, "gray")
+        abbr = DOMAIN_ABBR.get(domain, domain[:2].title())
+        ax.annotate(f"best {abbr}: {best:.0f}",
+                    xy=(n - 0.3, best), xytext=(4, 0),
+                    textcoords="offset points",
+                    fontsize=6, color=color, va="center")
+
+
+def build_figure(phase_label: str, phase_df: pd.DataFrame,
+                 block_labels: list, best_by_domain: dict,
+                 sub: str) -> plt.Figure:
+    fig, axes = plt.subplots(1, 3, figsize=(22, 6.5))
+    fig.suptitle(f"{sub}  —  {phase_label}", fontsize=13,
+                 fontweight="bold", y=1.01)
+
+    for ax, blk in zip(axes, block_labels):
+        blk_data = phase_df[phase_df["block_label"] == blk].copy()
+        plot_block(ax, blk_data, blk, best_by_domain)
+
+    # ── Legend ─────────────────────────────────────────────────────────────
+    domain_patches = [
+        mpatches.Patch(color=c, label=d.capitalize())
+        for d, c in DOMAIN_COLOR.items()
+        if d in best_by_domain or any(phase_df["domain"] == d)
+    ]
+    no_resp = mlines.Line2D([], [], color="crimson", marker="x",
+                            linestyle="None", markersize=7,
+                            label="No response")
+    best_line = mlines.Line2D([], [], color="gray", linestyle="--",
+                              linewidth=1.4, label="Best score (per domain)")
+    fig.legend(handles=domain_patches + [no_resp, best_line],
+               loc="upper right", fontsize=8.5, framealpha=0.9,
+               bbox_to_anchor=(1.0, 1.0))
+
+    plt.tight_layout()
+    return fig
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Plot per-trial performance by phase and block."
     )
-    ax_main  = fig.add_subplot(inner_gs[0])
-    ax_strip = fig.add_subplot(inner_gs[1], sharex=ax_main)
-    ax_roll  = ax_main.twinx()   # rolling accuracy (right y-axis)
+    parser.add_argument("sub", help="Subject ID (e.g. sub-001, 001, or 1)")
+    args = parser.parse_args()
 
-    # ── cumulative score lines ─────────────────────────────────────────────
-    for domain in DOMAINS:
-        dom_df = (
-            phase_df[phase_df["domain"] == domain]
-            .sort_values("trial_id")
-            .copy()
-        )
-        dom_df["within"] = dom_df["trial_id"] + 1
-        dom_df["cumulative"] = dom_df["feedback_score"].cumsum()
-        dom_df["cum_max"]    = dom_df["within"] * MAX_SCORE
-        dom_df["rolling"]    = (
-            dom_df["feedback_score"]
-            .rolling(window=ROLL_WINDOW, min_periods=1)
-            .mean()
-        )
+    sub = args.sub.strip()
+    if not sub.startswith("sub-"):
+        sub = f"sub-{sub.zfill(3)}"
 
-        x        = dom_df["trial_x"].values
-        y        = dom_df["cumulative"].values
-        cum_max  = dom_df["cum_max"].values
-        color    = DOMAIN_COLORS[domain]
+    trials_path = ROOT / "data" / sub / "trials.csv"
+    if not trials_path.exists():
+        print(f"[ERROR] File not found: {trials_path}")
+        sys.exit(1)
 
-        # shaded gap between actual and max
-        ax_main.fill_between(x, y, cum_max, alpha=0.07, color=color)
+    df = pd.read_csv(trials_path, on_bad_lines="skip")
+    df = assign_block_label(df)
 
-        # running-max diagonal
-        ax_main.plot(x, cum_max,
-                     color=color, linestyle="--", alpha=0.35, linewidth=1.2,
-                     zorder=2)
+    p1_df = df[df["phase"] == "phase_1"].copy()
+    p2_df = df[df["phase"] == "phase_2"].copy()
 
-        # cumulative score line
-        ax_main.plot(x, y,
-                     color=color, linestyle="-", linewidth=2.4,
-                     label=domain.capitalize(), zorder=3)
+    # Best possible score = max observed per domain across all blocks for that phase
+    p1_best = p1_df.groupby("domain")["feedback_score"].max().to_dict()
+    p2_best = p2_df.groupby("domain")["feedback_score"].max().to_dict()
 
-        # per-trial markers coloured by score
-        for _, r in dom_df.iterrows():
-            fc = cmap(norm(r["feedback_score"]))
-            ax_main.scatter(
-                r["trial_x"], r["cumulative"],
-                color=fc, s=62, zorder=5,
-                edgecolors=color, linewidths=1.2,
-            )
+    out_dir = ROOT / "data" / sub
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-        # rolling mean on twin axis (subtle)
-        ax_roll.plot(x, dom_df["rolling"].values,
-                     color=color, linestyle=":", linewidth=1.2, alpha=0.65)
-
-    # 85% cumulative threshold
-    ax_main.axhline(
-        THRESHOLD, color="crimson", linestyle="--", linewidth=1.8,
-        label=f"85% criterion  ({int(THRESHOLD)} pts)", zorder=4,
+    fig1 = build_figure(
+        "Phase 1  (Competence  —  blocks 1 · 3 · 5)",
+        p1_df, PHASE1_BLOCK_LABELS, p1_best, sub,
     )
+    p1_path = out_dir / "plot_phase1.png"
+    fig1.savefig(p1_path, dpi=150, bbox_inches="tight")
+    plt.close(fig1)
+    print(f"[Phase 1] saved -> {p1_path}")
 
-    # rolling threshold (right axis)
-    ax_roll.axhline(
-        MAX_SCORE * THRESHOLD_PCT, color="crimson",
-        linestyle=":", linewidth=1.0, alpha=0.6,
+    fig2 = build_figure(
+        "Phase 2  (Synergy  —  blocks 2 · 4 · 6)",
+        p2_df, PHASE2_BLOCK_LABELS, p2_best, sub,
     )
+    p2_path = out_dir / "plot_phase2.png"
+    fig2.savefig(p2_path, dpi=150, bbox_inches="tight")
+    plt.close(fig2)
+    print(f"[Phase 2] saved -> {p2_path}")
 
-    # domain boundary lines + region labels
-    for i, domain in enumerate(DOMAINS):
-        dom_df = phase_df[phase_df["domain"] == domain]
-        mid_x  = (dom_df["trial_x"].min() + dom_df["trial_x"].max()) / 2.0
-        ax_main.text(
-            mid_x, MAX_CUMULATIVE + 7,
-            domain.capitalize(),
-            ha="center", fontsize=9.5, color=DOMAIN_COLORS[domain],
-            fontstyle="italic", fontweight="bold",
-        )
-        if i < len(DOMAINS) - 1:
-            bx = dom_df["trial_x"].max() + 0.5
-            ax_main.axvline(bx, color="grey", linestyle="--", alpha=0.35, linewidth=0.8)
-            ax_strip.axvline(bx, color="grey", linestyle="--", alpha=0.35, linewidth=0.8)
 
-    # axes decoration — main
-    ax_main.set_title(PHASE_LABELS[phase], fontsize=11,
-                      fontweight="bold", pad=20, loc="left")
-    ax_main.set_ylabel("Cumulative Score", fontsize=10)
-    ax_main.set_ylim(0, MAX_CUMULATIVE + 18)
-    ax_main.set_yticks(range(0, MAX_CUMULATIVE + 1, 30))
-    ax_main.legend(loc="upper left", fontsize=9, framealpha=0.85,
-                   ncol=2, columnspacing=1.0)
-    ax_main.grid(True, alpha=0.2, zorder=0)
-    plt.setp(ax_main.get_xticklabels(), visible=False)
-
-    # right y-axis (rolling mean)
-    ax_roll.set_ylabel(f"Rolling {ROLL_WINDOW}-trial mean (pts)", fontsize=8,
-                       color="grey", labelpad=4)
-    ax_roll.set_ylim(0, MAX_SCORE + 1)
-    ax_roll.set_yticks(range(0, MAX_SCORE + 1, 2))
-    ax_roll.tick_params(axis="y", labelsize=7, colors="grey")
-    ax_roll.spines["right"].set_color("grey")
-
-    # ── response strip ─────────────────────────────────────────────────────
-    tile_h, tile_y0 = 0.82, 0.09
-
-    for domain in DOMAINS:
-        dom_df = (
-            phase_df[phase_df["domain"] == domain]
-            .sort_values("trial_id")
-            .copy()
-        )
-        for _, r in dom_df.iterrows():
-            fc   = cmap(norm(r["feedback_score"]))
-            rect = mpatches.FancyBboxPatch(
-                (r["trial_x"] - 0.43, tile_y0), 0.86, tile_h,
-                boxstyle="round,pad=0.03",
-                facecolor=fc, edgecolor="white", linewidth=0.6,
-            )
-            ax_strip.add_patch(rect)
-
-            txt_color = "white" if r["feedback_score"] < 6 else "#1a1a1a"
-            c1 = str(r["choice1_code"])
-            c2 = str(r["choice2_code"])
-            # choice1 (upper, bold)
-            ax_strip.text(
-                r["trial_x"], tile_y0 + tile_h * 0.67, c1,
-                ha="center", va="center",
-                fontsize=6.5, fontweight="bold", color=txt_color,
-            )
-            # choice2 (lower, lighter)
-            ax_strip.text(
-                r["trial_x"], tile_y0 + tile_h * 0.28, c2,
-                ha="center", va="center",
-                fontsize=5.2, fontweight="normal", color=txt_color, alpha=0.75,
-            )
-
-    ax_strip.set_xlim(x_start - 0.6, x_end + 0.6)
-    ax_strip.set_ylim(0, 1)
-    ax_strip.set_yticks([0.5])
-    ax_strip.set_yticklabels(["Choice\n(1st/2nd)", ], fontsize=7)
-    ax_strip.set_xlabel("Trial Number", fontsize=10)
-
-    # x-ticks every 3 trials
-    ticks = list(range(x_start, x_end + 1, 3))
-    if x_end not in ticks:
-        ticks.append(x_end)
-    ax_strip.set_xticks(ticks)
-    ax_strip.set_xticklabels([str(t) for t in ticks], fontsize=8)
-    ax_strip.tick_params(axis="x", length=3)
-    ax_strip.spines[["top", "right"]].set_visible(False)
-
-# ── shared colour bar (trial score) ────────────────────────────────────────────
-cbar_ax = fig.add_axes([0.91, 0.10, 0.012, 0.78])
-sm = ScalarMappable(cmap=SCORE_CMAP, norm=norm)
-sm.set_array([])
-cbar = fig.colorbar(sm, cax=cbar_ax)
-cbar.set_label("Trial Score", fontsize=9, labelpad=6)
-cbar.set_ticks(range(0, MAX_SCORE + 1, 2))
-cbar.ax.tick_params(labelsize=8)
-
-# ── save ───────────────────────────────────────────────────────────────────────
-plt.subplots_adjust(left=0.06, right=0.89, top=0.96, bottom=0.06)
-OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-plt.savefig(OUT_PATH, dpi=160, bbox_inches="tight")
-plt.close()
-print(f"Saved → {OUT_PATH}")
+if __name__ == "__main__":
+    main()
