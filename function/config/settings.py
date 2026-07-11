@@ -62,7 +62,7 @@ MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 1
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
-MAX_RESPONSE_TIME = 200.0          # seconds; None = unlimited
+MAX_RESPONSE_TIME = 300.0          # seconds; None = unlimited
 ITI_DURATION      = 1.5          # inter-trial interval (seconds)
 FRAME_RATE        = 60           # Hz – used for frame log sanity checks
 
@@ -119,7 +119,7 @@ INST_PHASE2 = """\
 
 
 # ─── Practice ────────────────────────────────────────────────────────────────
-PRACTICE_MODE    = True   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
+PRACTICE_MODE    = False   # True: 본 실험 전 연습 세션 실행 / False: 건너뜀
 PRACTICE_DOMAINS = ['cooking', 'repairing']
 PRACTICE_P1_TRIALS = 4   # Phase 1 연습 총 trial 수 
 PRACTICE_P2_TRIALS = 4   # Phase 2 연습 총 trial 수

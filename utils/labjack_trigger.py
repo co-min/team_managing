@@ -154,12 +154,14 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
         return
     try:
         print(f"[LabJack] SEND code={code} ({t_start:.4f}s)")
-        ljm.eWriteName(handle, "EIO_STATE", int(code))
-        ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH (rising edge → Natus 캡처)
+        ljm.eWriteNames(handle, 2,
+            ["EIO_STATE", "CIO_STATE"],
+            [float(code), float(_LATCH_CIO_STATE)])   # EIO + latch HIGH, 단일 USB 패킷
         while time.perf_counter() - t_start < pulse_s:
             pass
-        ljm.eWriteName(handle, "CIO_STATE", 0)   # latch LOW
-        ljm.eWriteName(handle, "EIO_STATE", 0)   # 데이터 클리어
+        ljm.eWriteNames(handle, 2,
+            ["CIO_STATE", "EIO_STATE"],
+            [0.0, 0.0])   # latch LOW + 데이터 클리어, 단일 USB 패킷
         t_actual = time.perf_counter() - t_start
         if abs(t_actual - pulse_s) > _PULSE_TOLERANCE_S:
             '''
@@ -180,8 +182,9 @@ def send_trigger_async(handle: int | None, code: int):
         return
     try:
         print(f"[LabJack] SEND_ASYNC code={code} ({time.perf_counter():.4f}s)")
-        ljm.eWriteName(handle, "EIO_STATE", int(code))
-        ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH
+        ljm.eWriteNames(handle, 2,
+            ["EIO_STATE", "CIO_STATE"],
+            [float(code), float(_LATCH_CIO_STATE)])   # EIO + latch HIGH, 단일 USB 패킷
     except Exception as e:
         print(f"[LabJack] 비동기 트리거 오류 (code={code}): {e}")
 
@@ -191,7 +194,8 @@ def reset_trigger(handle: int | None):
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
-        ljm.eWriteName(handle, "CIO_STATE", 0)   # latch LOW
-        ljm.eWriteName(handle, "EIO_STATE", 0)   # 데이터 클리어
+        ljm.eWriteNames(handle, 2,
+            ["CIO_STATE", "EIO_STATE"],
+            [0.0, 0.0])   # latch LOW + 데이터 클리어, 단일 USB 패킷
     except Exception as e:
         print(f"[LabJack] 리셋 오류: {e}")
