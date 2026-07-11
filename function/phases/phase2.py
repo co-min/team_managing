@@ -11,11 +11,11 @@ from psychopy import event, core
 from function.config.window_factory import get_shared_factory
 from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
 from function.io.frame_logger import FrameRecorder
+from function.io.frame_marker import get_shared_marker
 from utils.arrow_keyboard import ArrowKeyboard
-from utils.event_utils import check_escape
 from utils.labjack_trigger import (
-    send_trigger, send_trigger_async, reset_trigger, ANIMAL_IDX,
-    TRIG_P2_STIMULUS, TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
+    send_trigger, ANIMAL_IDX,
+    TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
     TRIG_P2_TRIAL_START, TRIG_P2_TRIAL_END,
 )
 
@@ -36,7 +36,7 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, al
 
 
 def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handle,
-                     stim_trig, choice_trig_base, excluded_idx=None,
+                     choice_trig_base, excluded_idx=None,
                      freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False):
     """
     Arrow-key preview + space-to-confirm loop.
@@ -46,13 +46,14 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
     """
     response_clock = core.Clock()
     preview_idx    = None
-    stim_triggered = False
 
     while True:
-        check_escape(win)
         confirmed_idx = confirmed_code = confirmed_rt = None
 
-        for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space'], timeStamped=response_clock):
+        for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space', 'escape'], timeStamped=response_clock):
+            if pressed == 'escape':
+                win.close()
+                core.quit()
             if pressed == 'space':
                 if preview_idx is not None:
                     confirmed_idx  = preview_idx
@@ -80,6 +81,8 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
             keyboard.draw()
             win.flip()
             core.wait(confirm_freeze)
+            factory.draw_base_scene(phase_type='phase2')
+            keyboard.draw()
             recorder.log_final(win, {'response': True})
             return confirmed_idx, confirmed_code, confirmed_rt
 
@@ -89,10 +92,6 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
 
         factory.draw_base_scene(phase_type='phase2')
         keyboard.draw()
-        if not stim_triggered:
-            win.callOnFlip(send_trigger_async, handle, stim_trig)
-            win.callOnFlip(reset_trigger, handle)
-            stim_triggered = True
         recorder.flip_and_log(win)
 
 
@@ -122,7 +121,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     factory.reset_ui_states()
 
     keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
-    recorder = FrameRecorder(frame_log, global_clock)
+    recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
 
     send_trigger(handle, TRIG_P2_TRIAL_START)
 
@@ -130,7 +129,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, synergy,
-        handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE1,
+        handle, TRIG_P2_CHOICE1,
     )
     if choice1_code is None:
         send_trigger(handle, TRIG_P2_TRIAL_END)
@@ -146,7 +145,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     keyboard.set_excluded(choice1_idx)
     _, choice2_code, rt2 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, synergy,
-        handle, TRIG_P2_STIMULUS, TRIG_P2_CHOICE2,
+        handle, TRIG_P2_CHOICE2,
         excluded_idx=choice1_idx,
         freeze_colors=True,
         confirm_freeze=1.0,

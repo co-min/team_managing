@@ -95,10 +95,11 @@ class FrameRecorder:
     can read and reassign it directly.
     """
 
-    def __init__(self, frame_log: FrameLog, global_clock) -> None:
+    def __init__(self, frame_log: FrameLog, global_clock, photodiode=None) -> None:
         self.frame_log = frame_log
         self.global_clock = global_clock
         self.idx = 0
+        self.photodiode = photodiode
 
     def start_segment(self) -> None:
         """Mark the next ``flip_and_log`` as a new segment's first frame.
@@ -125,6 +126,10 @@ class FrameRecorder:
         Pass *ttl_code* on frames where a TTL pulse was sent so the code is
         recorded in the CSV.
         """
+        if self.photodiode is not None:
+            if self.idx == 0:
+                self.photodiode.trigger()
+            self.photodiode.draw()
         flip_time = win.flip()
         if self.idx == 0:
             self.frame_log = set_onset(self.frame_log, flip_time)
@@ -146,12 +151,25 @@ class FrameRecorder:
 
         The marker is ``"response"`` when a response was collected, else
         ``"timeout"``.
+
+        When a photodiode is attached, triggers it and does one additional
+        flip so the sync pulse appears precisely at the response/timeout event.
+        The flip_time recorded is that new flip (not win.lastFrameT).
         """
+        event_marker = "response" if result["response"] else "timeout"
+
+        if self.photodiode is not None:
+            self.photodiode.trigger()
+            self.photodiode.draw()
+            flip_time = win.flip()
+        else:
+            flip_time = win.lastFrameT
+
         self.frame_log = log_frame(
             self.frame_log,
             frame_idx=self.idx,
-            flip_time=win.lastFrameT,
+            flip_time=flip_time,
             global_time=self.global_clock.getTime(),
-            event_marker="response" if result["response"] else "timeout",
+            event_marker=event_marker,
         )
         return self.frame_log

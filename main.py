@@ -10,6 +10,7 @@ from function.config.settings import (
 from function.practice.practice_loop import run_practice
 from function.io.data_loader import load_all_data
 from function.config.window_factory import get_shared_factory
+from function.io.frame_marker import init_marker
 from function.phases.block_runner import BlockConfig, run_block_trials
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
@@ -78,6 +79,8 @@ def main() -> None:
     subject_id   = ctx.subject_id
     handle       = ctx.handle
     global_clock = core.Clock()
+
+    init_marker(win)
 
     if PRACTICE_MODE:
         run_practice(win)

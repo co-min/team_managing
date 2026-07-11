@@ -504,7 +504,7 @@ def _run_phase2_trial(win, scene, data, char_order, domain):
 def _show_message(win, text, duration=2.5):
     """Display a brief timed message with no input required."""
     stim  = visual.TextStim(
-        win, text=text, font=FONT, color='white', height=32, wrapWidth=800,
+        win, text=text, font=FONT, color='white', height=45, wrapWidth=800, bold = True
     )
     clock = core.Clock()
     while clock.getTime() < duration:

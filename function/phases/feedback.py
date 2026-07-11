@@ -17,10 +17,10 @@ from utils.labjack_trigger import send_trigger_async, reset_trigger
 # ── Layout constants ──────────────────────────────────────────────────────────
 
 _MONKEY_PATH     = "image/monkey.png"
-_MONKEY_SIZE     = (260, 260)
-_MONKEY_POS      = (-210,   0)
-_BUBBLE_POS      = ( 210,   0)
-_BUBBLE_TAIL_POS = (   2,   0)
+_MONKEY_SIZE     = (300, 300)
+_MONKEY_POS      = (-240,   0)
+_BUBBLE_POS      = ( 250,   0)
+_BUBBLE_TAIL_POS = (   5,   0)
 _DOMAIN_Y        = 260
 
 _monkey_stim_cache: dict = {}
@@ -115,13 +115,13 @@ def _build_monkey_stims(win: visual.Window, stage: int, domain_cfg: dict,
     if monkey is not None:
         stims.append(monkey)
     stims += [
-        visual.Rect(win, width=420, height=240, pos=_BUBBLE_POS,
+        visual.Rect(win, width=480, height=280, pos=_BUBBLE_POS,
                     fillColor=bubble_color, lineColor=bubble_color),
-        visual.ShapeStim(win, vertices=[(-40, 0), (16, 22), (16, -22)],
-                         pos=_BUBBLE_TAIL_POS, fillColor=bubble_color, lineColor=bubble_color),
+        visual.ShapeStim(win, vertices=[(-45, 0), (18, 25), (18, -25)],
+                        pos=_BUBBLE_TAIL_POS, fillColor=bubble_color, lineColor=bubble_color),
         visual.TextStim(win, text=bubble_text,
-                        pos=_BUBBLE_POS, color='#222222', height=38, bold=True,
-                        font=FONT, wrapWidth=390),
+                        pos=_BUBBLE_POS, color='#222222', height=44, bold=True,
+                        font=FONT, wrapWidth=450),
     ]
     return stims
 
@@ -181,7 +181,7 @@ _DOMAIN_KO = {d: _DOMAIN_KO_ALL[d] for d in DOMAINS}
 
 def _make_domain_xs(domains: list) -> dict:
     n_domains = len(domains)
-    x_spacing = 200 if n_domains <= 2 else 210
+    x_spacing = 300 if n_domains <= 2 else 250
     return {d: int(-x_spacing * (n_domains - 1) / 2 + i * x_spacing) for i, d in enumerate(domains)}
 
 _DOMAIN_XS = _make_domain_xs(DOMAINS)
@@ -221,7 +221,7 @@ def run_feedback(
             color = "#FF9800" if d == domain else "#AAAAAA"
             domain_score_stims.append(visual.TextStim(
                 win, text=f"{domain_ko[d]}: {val}점",
-                pos=(x, -225), color=color, height=33, font=FONT, bold=(d == domain),
+                pos=(x, -225), color=color, height=38, font=FONT, bold=(d == domain),
             ))
 
     stims = (
@@ -231,9 +231,9 @@ def run_feedback(
         + domain_score_stims
         + [
             visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",
-                            pos=(0, -285), color="#AAAAAA", height=35, font=FONT, bold=False),
+                            pos=(0, -285), color="#AAAAAA", height=40, font=FONT, bold=False),
             visual.TextStim(win, text=f"총 점수: {float(cumulative_score)}점",
-                            pos=(0, -340), color="#FFD700", height=42, font=FONT, bold=True),
+                            pos=(0, -340), color="#FFD700", height=48, font=FONT, bold=True),
         ]
     )
 
