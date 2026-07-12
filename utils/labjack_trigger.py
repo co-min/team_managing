@@ -49,8 +49,6 @@ ANIMAL_IDX = {
 # Stimulus onset — phase를 인코딩
 # =========================================
 
-TRIG_P1_STIMULUS = 10   # Phase 1 (competence)
-TRIG_P2_STIMULUS = 20   # Phase 2 (synergy)
 TRIG_P3_STIMULUS = 30   # Phase 3 (choice)
 
 # =========================================
@@ -96,8 +94,8 @@ TRIG_P3_TRIAL_END   = 233
 # ============================================================================
 
 def init_labjack(device: str = "T4",
-                 connection: str = "USB",
-                 identifier: str = "ANY") -> int | None:
+                connection: str = "USB",
+                identifier: str = "ANY") -> int | None:
     # LabJack T4 연결
     if not _LJM_AVAILABLE:
         print("[LabJack] ljm 라이브러리를 찾을 수 없습니다. 트리거가 비활성화됩니다.")
@@ -142,36 +140,46 @@ def close_labjack(handle: int | None):
 # 트리거 전송
 # ============================================================================
 
-def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
+def send_trigger(handle: int | None, code: int, pulse_s: float = 0.010):
     """EIO 포트로 TTL 트리거 펄스 전송 (블로킹, perf_counter busy-wait).
 
     전송 순서:
-      EIO_STATE = code  →  CIO0(latch) HIGH  →  busy-wait  →  CIO0 LOW  →  EIO_STATE = 0
+      EIO_STATE = code  →  2ms busy-wait  →  CIO0(latch) HIGH  →
+      pulse_s busy-wait  →  CIO0 LOW  →  1ms busy-wait  →  EIO_STATE = 0
+
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
+    busy-wait를 사용하는 이유: Windows의 time.sleep() 최소 해상도가
+    ~15ms이므로 sleep(0.005)가 실제로 5ms를 보장하지 않는다.
     """
-    t_start = time.perf_counter()
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
-        print(f"[LabJack] SEND code={code} ({t_start:.4f}s)")
-        ljm.eWriteNames(handle, 2,
-            ["EIO_STATE", "CIO_STATE"],
-            [float(code), float(_LATCH_CIO_STATE)])   # EIO + latch HIGH, 단일 USB 패킷
-        while time.perf_counter() - t_start < pulse_s:
+        # 1. 데이터 설정
+        ljm.eWriteName(handle, "EIO_STATE", int(code))
+
+        # 2. EIO 안정화 대기 (USB 왕복 후 핀 안정 보장)
+        _t = time.perf_counter()
+        while time.perf_counter() - _t < 0.002:
             pass
-        ljm.eWriteNames(handle, 2,
-            ["CIO_STATE", "EIO_STATE"],
-            [0.0, 0.0])   # latch LOW + 데이터 클리어, 단일 USB 패킷
-        t_actual = time.perf_counter() - t_start
-        if abs(t_actual - pulse_s) > _PULSE_TOLERANCE_S:
-            '''
-            print(
-                f"[TIMING MISMATCH] send_trigger code={code}: "
-                f"expected {pulse_s * 1000:.2f} ms, "
-                f"actual {t_actual * 1000:.2f} ms "
-                f"(diff {(t_actual - pulse_s) * 1000:+.2f} ms)"
-            )
-            '''
+
+        # 3. Latch HIGH → Natus가 rising edge에서 EIO 값 캡처
+        ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)
+
+        # 4. 펄스 유지
+        _t = time.perf_counter()
+        while time.perf_counter() - _t < pulse_s:
+            pass
+
+        # 5. Latch LOW → 다음 트리거를 위한 falling edge
+        ljm.eWriteName(handle, "CIO_STATE", 0)
+
+        # 6. hold time 후 데이터 클리어 (falling edge 직후 클리어 방지)
+        _t = time.perf_counter()
+        while time.perf_counter() - _t < 0.001:
+            pass
+
+        ljm.eWriteName(handle, "EIO_STATE", 0)
+
     except Exception as e:
         print(f"[LabJack] 트리거 전송 오류 (code={code}): {e}")
 

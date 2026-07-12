@@ -25,6 +25,7 @@ def get_subject_info():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def show_instructions(win, text: str):
+    event.clearEvents()
     msg = visual.TextStim(
         win,
         text=text,
@@ -38,3 +39,4 @@ def show_instructions(win, text: str):
     msg.draw()
     win.flip()
     event.waitKeys(keyList=["space"])   # press space to continue
+    event.clearEvents()

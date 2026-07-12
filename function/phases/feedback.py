@@ -12,7 +12,7 @@ import csv
 from psychopy import visual, core
 from function.config.settings import FB_TIME, FONT, SCORE_CSV, DOMAINS, MISSION_MODE
 from utils.event_utils import check_escape
-from utils.labjack_trigger import send_trigger_async, reset_trigger
+from utils.labjack_trigger import send_trigger
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -237,14 +237,16 @@ def run_feedback(
         ]
     )
 
+    from psychopy import event as _event
+    _event.clearEvents()
     clock           = core.Clock()
     trigger_sent    = False
     while clock.getTime() < FB_TIME:
         for stim in stims:
             stim.draw()
         if not trigger_sent:
-            win.callOnFlip(send_trigger_async, handle, trig_code)
-            win.callOnFlip(reset_trigger, handle)
+            win.callOnFlip(send_trigger, handle, trig_code)
             trigger_sent = True
         win.flip()
         check_escape(win)
+    _event.clearEvents()

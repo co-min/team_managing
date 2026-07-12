@@ -12,6 +12,7 @@ from function.io.subject_csv import append_trial_row, append_frame_rows
 from function.io.summary import save_experiment_summary
 from function.phases.feedback import run_feedback
 from utils.inter_trial import run_gaussian_iti
+from utils.labjack_trigger import send_trigger
 
 
 @dataclass

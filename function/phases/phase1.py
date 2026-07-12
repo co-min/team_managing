@@ -3,7 +3,7 @@
 from psychopy import event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE, COMPETENCE_COLOR as _COMPETENCE_COLOR
+from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, CHAR_CODE as _CHAR_CODE, COMPETENCE_COLOR as _COMPETENCE_COLOR
 from function.io.frame_logger import FrameRecorder
 from function.io.frame_marker import get_shared_marker
 from utils.arrow_keyboard import ArrowKeyboard
@@ -19,13 +19,15 @@ def _run_choice_loop(
     choice_trig_base,
     excluded_idx=None, locked_idx=None, confirm_wait=0.15, lock_on_confirm=False,
     show_hover_border=True,
+    onset_trigger=None,
 ):
     """
     Arrow-key preview + space-to-confirm loop.
     Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
     """
-    response_clock = core.Clock()
-    preview_idx    = None
+    response_clock  = core.Clock()
+    preview_idx     = None
+    _onset_pending  = onset_trigger
 
     while True:
         for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space', 'escape'], timeStamped=response_clock):
@@ -42,6 +44,7 @@ def _run_choice_loop(
                     keyboard.draw()
                     win.flip()
                     core.wait(confirm_wait)
+                    event.clearEvents()
                     factory.draw_base_scene(phase_type='phase1')
                     keyboard.draw()
                     recorder.log_final(win, {'response': True})
@@ -64,6 +67,9 @@ def _run_choice_loop(
 
         factory.draw_base_scene(phase_type='phase1')
         keyboard.draw()
+        if _onset_pending is not None:
+            win.callOnFlip(send_trigger, handle, _onset_pending)
+            _onset_pending = None
         recorder.flip_and_log(win)
 
 
@@ -72,6 +78,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     Run one Phase 1 trial.
     Returns dict {'choice1', 'choice2', 'rt1', 'rt2'} or None on timeout.
     """
+    event.clearEvents()
     factory = get_shared_factory(win)
     factory.apply_layout(char_order)
     char_list = factory.char_list
@@ -80,7 +87,6 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
     keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
     recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
-    send_trigger(handle, TRIG_P1_TRIAL_START)
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     keyboard.reset_colors()
@@ -88,10 +94,13 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
         win, factory, keyboard, recorder, char_list, handle,
         TRIG_P1_CHOICE1, confirm_wait=0.15,
         show_hover_border=False,
+        onset_trigger=TRIG_P1_TRIAL_START,
     )
     if choice1_code is None:
         send_trigger(handle, TRIG_P1_TRIAL_END)
         return None
+
+    # core.wait(CHOICE_GAP)
 
     # Apply competence colors (hide_border로 숨김; Choice 2 호버 시 show_border로 표시)
     for char_name in char_list:

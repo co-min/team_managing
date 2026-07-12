@@ -9,7 +9,7 @@ Trial flow
 from psychopy import event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
+from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
 from function.io.frame_logger import FrameRecorder
 from function.io.frame_marker import get_shared_marker
 from utils.arrow_keyboard import ArrowKeyboard
@@ -37,7 +37,8 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, al
 
 def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handle,
                      choice_trig_base, excluded_idx=None,
-                     freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False):
+                     freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False,
+                     onset_trigger=None):
     """
     Arrow-key preview + space-to-confirm loop.
 
@@ -46,6 +47,7 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
     """
     response_clock = core.Clock()
     preview_idx    = None
+    _onset_pending = onset_trigger
 
     while True:
         confirmed_idx = confirmed_code = confirmed_rt = None
@@ -81,6 +83,7 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
             keyboard.draw()
             win.flip()
             core.wait(confirm_freeze)
+            event.clearEvents()
             factory.draw_base_scene(phase_type='phase2')
             keyboard.draw()
             recorder.log_final(win, {'response': True})
@@ -92,6 +95,9 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
 
         factory.draw_base_scene(phase_type='phase2')
         keyboard.draw()
+        if _onset_pending is not None:
+            win.callOnFlip(send_trigger, handle, _onset_pending)
+            _onset_pending = None
         recorder.flip_and_log(win)
 
 
@@ -113,6 +119,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     dict  {'choice1': char_code, 'choice2': char_code, 'rt1': float, 'rt2': float}
     or None on timeout
     """
+    event.clearEvents()
     factory = get_shared_factory(win)
     factory.apply_layout(char_order)
     char_list = factory.char_list
@@ -123,17 +130,18 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
     recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
 
-    send_trigger(handle, TRIG_P2_TRIAL_START)
-
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, synergy,
         handle, TRIG_P2_CHOICE1,
+        onset_trigger=TRIG_P2_TRIAL_START,
     )
     if choice1_code is None:
         send_trigger(handle, TRIG_P2_TRIAL_END)
         return None
+
+    # core.wait(CHOICE_GAP)
 
     # Lock Choice 1; seed synergy colours for Choice 2 resting state
     factory.set_animal_locked(char_list[choice1_idx], True)
