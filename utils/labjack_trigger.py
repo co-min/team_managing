@@ -154,6 +154,8 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.010):
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
+        t_start = time.perf_counter()
+        print(f"[LabJack] SEND code={code} ({t_start:.4f}s)")
         # 1. 데이터 설정
         ljm.eWriteName(handle, "EIO_STATE", int(code))
 
