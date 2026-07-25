@@ -28,7 +28,8 @@ _TRIAL_FIELDS = [
     "response_made",
     "choice1_code", "choice2_code", "choice1_animal", "choice2_animal",
     "trig_choice1", "trig_choice2",
-    "rt_choice1", "rt_choice2", "feedback_score", "elapsed_time", "timestamp",
+    "rt_choice1", "rt_choice2", "feedback_score", "optimal_score", "is_optimal",
+    "elapsed_time", "timestamp",
 ]
 
 _FRAME_FIELDS = [

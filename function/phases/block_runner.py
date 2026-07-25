@@ -58,12 +58,13 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
 
 
 def _launch_save_thread(subject_id, block_index, phase, domain, trial_index,
-                        stim_pair_id, char_order, result, fb_score, frame_log, global_clock):
+                        stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
+                        score_data=None):
     _, record = save_trial_metadata(
         subject_id=subject_id, block_i=block_index, phase=phase, domain=domain,
         trial_id=trial_index, stim_pair_id=stim_pair_id,
         char_order=char_order, result=result, feedback_score=fb_score,
-        elapsed_time=global_clock.getTime(),
+        elapsed_time=global_clock.getTime(), score_data=score_data,
     )
     rows     = get_rows(frame_log)
     save_dir = build_trial_save_dir(subject_id, block_index, phase, domain, stim_pair_id)
@@ -106,6 +107,7 @@ def run_block_trials(
         save_thread = _launch_save_thread(
             subject_id, block_index, phase, domain, trial_index,
             stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
+            score_data=cfg.score_data,
         )
 
     if save_thread:
