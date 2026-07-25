@@ -2,10 +2,10 @@
 """
 Feedback phase — domain-specific score display with monkey narrator.
 
-  repairing : cleanliness level text  (stage 1=dirty → 7=clean)
+  repairing : cleanliness level text  (stage 1=dirty → 6=clean)
   cooking   : taste-label text
 
-Score normalisation: domain min/max from stimuli/score_table.csv → stage 1–7
+Score normalisation: domain min/max from stimuli/score_table.csv → stage 1–6
 """
 
 import csv
@@ -25,8 +25,8 @@ _DOMAIN_Y        = 260
 
 _monkey_stim_cache: dict = {}
 
-# Shared 7-step color ramp (red → green)
-_RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#CDDC39", "#8BC34A", "#4CAF50"]
+# 6-step color ramp (red → green)
+_RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#8BC34A", "#4CAF50"]
 
 
 # ── Score ranges from the active MODE's score CSV ─────────────────────────────
@@ -62,12 +62,12 @@ else:
 
 
 def score_to_stage(score: float, domain: str, score_ranges: dict = None) -> int:
-    """Normalise raw score to stage 1–7 using domain min/max from score_table."""
+    """Normalise raw score to stage 1–6 using domain min/max from score_table."""
     ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
     lo, hi = ranges.get(domain, (3.0, 9.0))
     if hi == lo:
-        return 4
-    return max(1, min(7, int(1 + (score - lo) / (hi - lo) * 6 + 0.5)))
+        return 3
+    return max(1, min(6, int(1 + (score - lo) / (hi - lo) * 5 + 0.5)))
 
 
 # ── Domain builders ───────────────────────────────────────────────────────────
@@ -132,13 +132,12 @@ _DOMAIN: dict[str, dict] = {
     'repairing': {
         'build':  _build_text_stims,
         'monkey': [
-            "아직 많이 지저분해...",
-            "꽤 지저분해",
-            "조금 지저분해",
-            "청소 상태가 보통이야",
-            "조금 깨끗해!",
-            "꽤 깨끗해!",
-            "완벽하게 깨끗해!",
+            "아직 많이 지저분해...",   # stage 1
+            "꽤 지저분해",             # stage 2
+            "조금 지저분해",           # stage 3
+            "청소 상태가 보통이야",    # stage 4
+            "꽤 깨끗해!",             # stage 5
+            "완벽하게 깨끗해!",       # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -146,13 +145,12 @@ _DOMAIN: dict[str, dict] = {
     'cooking': {
         'build':  _build_text_stims,
         'monkey': [
-            "이 요리는 맛없어...",
-            "이 요리는 별로야",
-            "조금 아쉬워",
-            "이 요리는 보통이야",
-            "맛있어!",
-            "정말 맛있어!",
-            "최고야!",
+            "이 요리는 맛없어...",     # stage 1
+            "이 요리는 별로야",        # stage 2
+            "조금 아쉬워",             # stage 3
+            "이 요리는 보통이야",      # stage 4
+            "정말 맛있어!",           # stage 5
+            "최고야!",                # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -160,13 +158,12 @@ _DOMAIN: dict[str, dict] = {
     'tennis': {
         'build':  _build_text_stims,
         'monkey': [
-            "경기를 많이 졌어...",
-            "꽤 아쉬운 경기야",
-            "조금 아쉬워",
-            "보통 경기야",
-            "잘 했어!",
-            "정말 잘 했어!",
-            "완벽한 경기야!",
+            "경기를 많이 졌어...",     # stage 1
+            "꽤 아쉬운 경기야",       # stage 2
+            "조금 아쉬워",             # stage 3
+            "보통 경기야",             # stage 4
+            "정말 잘 했어!",          # stage 5
+            "완벽한 경기야!",         # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
