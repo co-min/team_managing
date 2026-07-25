@@ -55,7 +55,7 @@ def generate_score_table(competence, pairs, domains):
         row = {'pair_id': p['pair_id'], 'char1': c1, 'char2': c2}
         for d in domains:
             # score = synergy + (competency_char1 + competency_char2)
-            row[f'sc_{d}'] = syn * (competence[c1][d] + competence[c2][d])
+            row[f'sc_{d}'] = round(syn * (competence[c1][d] + competence[c2][d]), 2)
         rows.append(row)
     return rows
 
@@ -82,7 +82,7 @@ def run(config_name):
     print(header)
     for r in rows:
         line = f"{r['pair_id']:>8} {r['char1']:>6} {r['char2']:>6}" + \
-               ''.join(f" {r[f'sc_{d}']:>12.4g}" for d in domains)
+               ''.join(f" {r[f'sc_{d}']:>12.2f}" for d in domains)
         print(line)
 
 

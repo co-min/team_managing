@@ -95,16 +95,26 @@ FB_TIME = 3.5
 _comp_df  = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
 CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
 
-# Synergy score -> block fill colour
-SYNERGY_COLOR = {1.4: 'green', 1.0: 'yellow', 0.8: 'red'}
+# Competence score -> border colour
+# low: red 1.0~3.0
+# middel: yellow 3.5~6.0
+# high: green 6.5~9.0
+
+
+# Synergy score -> block fill colour (dynamically built from CSVs)
+_syn_df     = pd.read_csv(ROOT_DIR / 'stimuli' / 'domain3' / 'synergy_table.csv', skipinitialspace=True)
+_color_df   = pd.read_csv(ROOT_DIR / 'stimuli' / 'color_type' / 'synergy_color.csv', skipinitialspace=True)
+_scores     = sorted(_syn_df['synergy_score'].unique()) # 오름차순 정렬
+_colors     = _color_df.sort_values('id')['color'].str.strip().tolist()
+SYNERGY_COLOR = dict(zip(_scores, _colors)) # 1:1 mapping
 
 
 # phase1 instruction  ({block_num}/{total_blocks} filled in at runtime)
 INST_PHASE1 = """\
 [{block_num} / {total_blocks}]
 
-이번 단계에서는 능력치가 보입니다.
-협력도를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.
+이번 단계에서는 능력이 보입니다.
+팀워크를 예상하여 동물 두 마리를 골라서 점수를 최대한 높여주세요.
 
 [Space] 키를 눌러 시작"""
 
@@ -112,8 +122,8 @@ INST_PHASE1 = """\
 INST_PHASE2 = """\
 [{block_num} / {total_blocks} 블록]
 
-이번 단계에서는 협력도가 보입니다.
-능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요
+이번 단계에서는 팀워크가 보입니다.
+두 동물의 능력의 합을 예상하여 두 마리를 골라서 점수를 최대한 높여주세요.
 
 [Space] 키를 눌러 시작"""
 
