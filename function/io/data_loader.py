@@ -29,7 +29,7 @@ def load_all_data():
         for g in range(n_groups)
     ]
 
-    syn_df = pd.read_csv('stimuli/synergy_table.csv', skipinitialspace=True)
+    syn_df = pd.read_csv('stimuli/synergy/synergy_table.csv', skipinitialspace=True)
     synergy = {}
     for _, row in syn_df.iterrows():
         key = tuple(sorted([str(row['char1']).strip(), str(row['char2']).strip()]))

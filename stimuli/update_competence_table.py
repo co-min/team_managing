@@ -3,7 +3,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASIC_PATH = os.path.join(BASE_DIR, "comp_basic.csv")
-TABLE_PATH = os.path.join(BASE_DIR, "competence_table.csv")
+TABLE_PATH = os.path.join(BASE_DIR, "domain3", "competence_table.csv")
 
 COMP_COLS = ["cooking", "repairing", "tennis"]
 

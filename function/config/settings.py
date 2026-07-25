@@ -18,8 +18,8 @@ MISSION_MODE = 3
 DOMAIN_ORDER = 'random'
 
 if MISSION_MODE == 1:
-    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'
-    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table.csv'
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'domain3' / 'competence_table.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'domain3' / 'score_table.csv'
     P2_COMPETENCE_CSV = COMPETENCE_CSV
     P2_SCORE_CSV      = SCORE_CSV
     DOMAINS           = ['cooking', 'repairing', 'tennis']
@@ -29,8 +29,8 @@ if MISSION_MODE == 1:
     P3_TRIALS         = 6
     COMPETENCE_COLOR  = {1: '#F44336', 2: '#FFEB3B', 3: '#4CAF50'}          # 3-level
 elif MISSION_MODE == 2:
-    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
-    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'domain2' / 'competence_table_domain2.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'domain2' / 'score_table_domain2.csv'
     P2_COMPETENCE_CSV = COMPETENCE_CSV
     P2_SCORE_CSV      = SCORE_CSV
     DOMAINS           = ['cooking', 'repairing']
@@ -40,10 +40,10 @@ elif MISSION_MODE == 2:
     P3_TRIALS         = 6
     COMPETENCE_COLOR  = {1: '#F44336', 2: '#FF9800', 3: '#FFEB3B', 4: '#4CAF50'}  # 4-level
 else:  # MISSION_MODE == 3
-    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'competence_table.csv'
-    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'score_table.csv'
-    P2_COMPETENCE_CSV = ROOT_DIR / 'stimuli' / 'competence_table_domain2.csv'
-    P2_SCORE_CSV      = ROOT_DIR / 'stimuli' / 'score_table_domain2.csv'
+    COMPETENCE_CSV    = ROOT_DIR / 'stimuli' / 'domain3' / 'competence_table.csv'
+    SCORE_CSV         = ROOT_DIR / 'stimuli' / 'domain3' / 'score_table.csv'
+    P2_COMPETENCE_CSV = ROOT_DIR / 'stimuli' / 'domain2' / 'competence_table_domain2.csv'
+    P2_SCORE_CSV      = ROOT_DIR / 'stimuli' / 'domain2' / 'score_table_domain2.csv'
     DOMAINS           = ['cooking', 'repairing', 'tennis']   # phase1 domains
     P2_DOMAINS        = ['cooking', 'repairing']              # phase2 domains
     P1_TRIALS         = 18

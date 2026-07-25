@@ -8,14 +8,14 @@ BASE_DIR = os.path.dirname(__file__)
 # 새 도메인 추가 시 여기에만 항목을 추가하면 됨
 CONFIGS = {
     'domain1': {
-        'competence_file': 'competence_table.csv',
+        'competence_file': 'domain3/competence_table.csv',
         'domains':         ['cooking', 'repairing', 'tennis'],
-        'output_file':     'score_table.csv',
+        'output_file':     'domain3/score_table.csv',
     },
     'domain2': {
-        'competence_file': 'competence_table_domain2.csv',
+        'competence_file': 'domain2/competence_table_domain2.csv',
         'domains':         ['cooking', 'repairing'],
-        'output_file':     'score_table_domain2.csv',
+        'output_file':     'domain2/score_table_domain2.csv',
     },
 }
 # ──────────────────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ def run(config_name):
     domains = cfg['domains']
 
     competence = load_competence(os.path.join(BASE_DIR, cfg['competence_file']), domains)
-    pairs      = load_synergy(os.path.join(BASE_DIR, 'synergy_table.csv'))
+    pairs      = load_synergy(os.path.join(BASE_DIR, 'synergy', 'synergy_table.csv'))
     rows       = generate_score_table(competence, pairs, domains)
 
     out_path   = os.path.join(BASE_DIR, cfg['output_file'])
