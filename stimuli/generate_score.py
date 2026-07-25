@@ -29,7 +29,7 @@ def load_competence(path, domains):
         for row in reader:
             char = row['char_ani'].strip()
             if char not in competence:
-                competence[char] = {d: int(row[d]) for d in domains}
+                competence[char] = {d: float(row[d]) for d in domains}
     return competence
 
 

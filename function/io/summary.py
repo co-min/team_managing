@@ -102,6 +102,11 @@ def _aggregate(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def _elapsed_times(rows: List[Dict[str, Any]]) -> List[float]:
+    """Return non-null elapsed_time values from rows."""
+    return [v for v in (_to_float(r.get("elapsed_time")) for r in rows) if v is not None]
+
+
 # ── public API ────────────────────────────────────────────────────────────────
 
 def build_experiment_summary(subject_id: str) -> Dict[str, Any]:
@@ -144,13 +149,25 @@ def build_experiment_summary(subject_id: str) -> Dict[str, Any]:
             if d not in order:
                 order.append(d)
 
-    # by_block
+    # by_block — with per-block elapsed duration
+    # elapsed_time is cumulative from experiment start, so block duration =
+    # max(elapsed_time in block) − max(elapsed_time in all prior blocks)
     by_block: Dict[str, Any] = {}
+    prev_end = 0.0
     for block in blocks_seen:
         block_rows = [r for r in rows if r.get("block") == block]
         stats = _aggregate(block_rows)
         stats["phase"]        = block_phase.get(block, "")
         stats["domain_order"] = block_domain_order.get(block, [])
+        times = _elapsed_times(block_rows)
+        if times:
+            block_end = max(times)
+            stats["elapsed_sec"] = round(block_end - prev_end, 2)
+            stats["elapsed_min"] = round((block_end - prev_end) / 60, 3)
+            prev_end = block_end
+        else:
+            stats["elapsed_sec"] = None
+            stats["elapsed_min"] = None
         by_block[block] = stats
 
     # by_phase (aggregated across ALL blocks of the same phase)
@@ -176,10 +193,20 @@ def build_experiment_summary(subject_id: str) -> Dict[str, Any]:
             for domain in block_domain_order.get(block, [])
         }
 
+    overall = _aggregate(rows)
+    all_times = _elapsed_times(rows)
+    if all_times:
+        total_sec = max(all_times)
+        overall["total_elapsed_sec"] = round(total_sec, 2)
+        overall["total_elapsed_min"] = round(total_sec / 60, 3)
+    else:
+        overall["total_elapsed_sec"] = None
+        overall["total_elapsed_min"] = None
+
     return {
         "subject_id":      subject_id,
         "generated_at":    datetime.now().isoformat(timespec="seconds"),
-        "overall":         _aggregate(rows),
+        "overall":         overall,
         "by_block":        by_block,
         "by_phase":        by_phase,
         "by_domain":       by_domain,
@@ -205,14 +232,14 @@ def save_experiment_summary(subject_id: str) -> Path:
     return out_path
 
 
-if __name__ == "__main__":
-    import sys
+# if __name__ == "__main__":
+#     import sys
 
-    if len(sys.argv) < 2:
-        print("Usage: python -m function.io.summary <subject_id> [subject_id ...]")
-        print("Example: python -m function.io.summary 003 004")
-        sys.exit(1)
+#     if len(sys.argv) < 2:
+#         # print("Usage: python -m function.io.summary <subject_id> [subject_id ...]")
+#         # print("Example: python -m function.io.summary 003 004")
+#         sys.exit(1)
 
-    for sid in sys.argv[1:]:
-        path = save_experiment_summary(sid)
-        print(f"[OK] sub-{sid} → {path}")
+#     for sid in sys.argv[1:]:
+#         path = save_experiment_summary(sid)
+#         print(f"[OK] sub-{sid} → {path}")
