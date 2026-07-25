@@ -62,7 +62,7 @@ MONITOR_NAME     = "testMonitor"  # TODO: calibrate your monitor
 SCREEN_NUMBER = 1
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
-MAX_RESPONSE_TIME = 300.0          # seconds; None = unlimited
+MAX_RESPONSE_TIME = 30.0          # seconds; None = unlimited
 ITI_DURATION      = 1.5          # inter-trial interval (seconds)
 CHOICE_GAP        = 0.5          # seconds between Choice 1 and Choice 2
 FRAME_RATE        = 60           # Hz – used for frame log sanity checks
@@ -99,6 +99,13 @@ CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.st
 # low: red 1.0~3.0
 # middel: yellow 3.5~6.0
 # high: green 6.5~9.0
+def get_comp_color(score: float) -> str:
+    if score <= 3.0:
+        return COMPETENCE_COLOR[1]   # red
+    elif score <= 6.0:
+        return COMPETENCE_COLOR[2]   # yellow
+    else:
+        return COMPETENCE_COLOR[3]   # green
 
 
 # Synergy score -> block fill colour (dynamically built from CSVs)
