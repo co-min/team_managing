@@ -117,7 +117,7 @@ def get_comp_color(score: float) -> str:
 
 
 # Synergy score -> block fill colour (dynamically built from CSVs)
-_syn_df   = pd.read_csv(_STIMULI / 'domain3' / 'synergy_table.csv', skipinitialspace=True)
+_syn_df   = pd.read_csv(_STIMULI / 'synergy' / 'synergy_table.csv', skipinitialspace=True)
 _color_df = pd.read_csv(_STIMULI / 'color_type' / 'synergy_color.csv', skipinitialspace=True)
 _scores   = sorted(_syn_df['synergy_score'].unique())
 _colors   = _color_df.sort_values('id')['color'].str.strip().tolist()

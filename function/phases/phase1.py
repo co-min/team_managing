@@ -3,7 +3,7 @@
 from psychopy import event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, CHAR_CODE as _CHAR_CODE, COMPETENCE_COLOR as _COMPETENCE_COLOR
+from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, CHAR_CODE as _CHAR_CODE, get_comp_color as _get_comp_color
 from function.io.frame_logger import FrameRecorder
 from function.io.frame_marker import get_shared_marker
 from utils.arrow_keyboard import ArrowKeyboard
@@ -104,9 +104,8 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
     # Apply competence colors (hide_border로 숨김; Choice 2 호버 시 show_border로 표시)
     for char_name in char_list:
-        factory.set_border_color(char_name, _COMPETENCE_COLOR.get(
-            competence[_CHAR_CODE[char_name]][domain], 'white'
-        ))
+        score = competence[_CHAR_CODE[char_name]][domain]
+        factory.set_border_color(char_name, _get_comp_color(score))
         factory.hide_border(char_name)
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
