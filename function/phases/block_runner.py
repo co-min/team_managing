@@ -11,6 +11,7 @@ from function.io.path_builder import build_trial_save_dir
 from function.io.subject_csv import append_trial_row, append_frame_rows
 from function.io.summary import save_experiment_summary
 from function.phases.feedback import run_feedback
+from function.config.settings import CHAR_CODE as _CHAR_CODE
 from utils.inter_trial import run_gaussian_iti
 from utils.labjack_trigger import send_trigger
 
@@ -33,7 +34,7 @@ def _persist_trial(subject_id, record, rows, save_dir):
     save_frame_log(rows, save_dir)
 
 
-def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain):
+def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=None):
     """Update cumulative scores and show feedback. Returns the feedback score (0 if no result)."""
     if not result:
         return 0
@@ -42,6 +43,14 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
     cumulative['total'] += score
     cumulative['phase'] += score
     cumulative[domain]  += score
+
+    # char_ani codes (A/B/C/D) repeat across animals, so map via the trial's char_order
+    if char_order:
+        code_to_animal = {_CHAR_CODE[a]: a for a in char_order}
+        animal1 = code_to_animal.get(result['choice1'])
+        animal2 = code_to_animal.get(result['choice2'])
+    else:
+        animal1 = animal2 = None
 
     run_feedback(
         win, score, domain,
@@ -53,6 +62,8 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
         handle=handle,
         trig_code=feedback_trig,
         score_ranges=cfg.score_ranges,
+        animal1=animal1,
+        animal2=animal2,
     )
     return score
 
@@ -101,7 +112,7 @@ def run_block_trials(
 
         result = cfg.trial_runner(win, global_clock, frame_log, cfg.data_dict, domain, char_order, handle)
 
-        fb_score = _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain)
+        fb_score = _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=char_order)
 
         save_thread = _launch_save_thread(
             subject_id, block_index, phase, domain, trial_index,

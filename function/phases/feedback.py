@@ -23,6 +23,10 @@ _BUBBLE_POS      = ( 250,   0)
 _BUBBLE_TAIL_POS = (   5,   0)
 _DOMAIN_Y        = 260
 
+_CHOICE_ANIMAL_SIZE = (150, 150)
+_CHOICE_L_POS       = ( 165, 250)   # bubble-center x, left
+_CHOICE_R_POS       = ( 335, 250)   # bubble-center x, right
+
 _monkey_stim_cache: dict = {}
 
 # 6-step color ramp (red → green)
@@ -103,6 +107,22 @@ def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
         except Exception:
             _monkey_stim_cache[wid] = None
     return _monkey_stim_cache[wid]
+
+
+def _build_choice_animal_stims(win: visual.Window,
+                               animal1: str = None, animal2: str = None) -> list:
+    stims = []
+    for animal, pos in [(animal1, _CHOICE_L_POS), (animal2, _CHOICE_R_POS)]:
+        if not animal:
+            continue
+        try:
+            stims.append(visual.ImageStim(
+                win, image=f"image/objectives/{animal}.png",
+                pos=pos, size=_CHOICE_ANIMAL_SIZE,
+            ))
+        except Exception:
+            pass
+    return stims
 
 
 def _build_monkey_stims(win: visual.Window, stage: int, domain_cfg: dict,
@@ -199,6 +219,8 @@ def run_feedback(
     handle=None,
     trig_code: int = 0,
     score_ranges: dict = None,
+    animal1: str = None,
+    animal2: str = None,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
     active_ranges  = score_ranges if score_ranges is not None else _SCORE_RANGES
@@ -222,7 +244,8 @@ def run_feedback(
             ))
 
     stims = (
-        domain_cfg['build'](win, stage, domain_cfg)
+        _build_choice_animal_stims(win, animal1, animal2)
+        + domain_cfg['build'](win, stage, domain_cfg)
         + _build_monkey_stims(win, stage, domain_cfg, score=score, domain=domain,
                               score_ranges=active_ranges)
         + domain_score_stims

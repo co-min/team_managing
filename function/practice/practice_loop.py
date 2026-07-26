@@ -552,6 +552,7 @@ def run_practice(win: visual.Window) -> None:
             cumulative['total'] += trial_score
             cumulative['phase'] += trial_score
             cumulative[domain]  += trial_score
+            _rev = {v: k for k, v in data['char_code'].items()}
             run_feedback(
                 win, trial_score, domain,
                 cumulative_score=cumulative['total'],
@@ -560,6 +561,8 @@ def run_practice(win: visual.Window) -> None:
                 block_domains=PRACTICE_DOMAINS,
                 n_trials_per_domain=n_per_domain_p1,
                 score_ranges=data['score_ranges'],
+                animal1=_rev.get(result['choice1']),
+                animal2=_rev.get(result['choice2']),
             )
 
     # ── Practice Phase 2 : synergy task ──────────────────────────────────────
@@ -579,6 +582,7 @@ def run_practice(win: visual.Window) -> None:
             cumulative['total'] += trial_score
             cumulative['phase'] += trial_score
             cumulative[domain]  += trial_score
+            _rev = {v: k for k, v in data['char_code'].items()}
             run_feedback(
                 win, trial_score, domain,
                 cumulative_score=cumulative['total'],
@@ -587,6 +591,8 @@ def run_practice(win: visual.Window) -> None:
                 block_domains=PRACTICE_DOMAINS,
                 n_trials_per_domain=n_per_domain_p2,
                 score_ranges=data['score_ranges'],
+                animal1=_rev.get(result['choice1']),
+                animal2=_rev.get(result['choice2']),
             )
 
     _show_message(win, INST_PRACTICE_END, duration=PRACTICE_END_DURATION)

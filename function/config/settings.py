@@ -103,7 +103,8 @@ FB_TIME = 3.5
 
 # Animal name -> char_ani code — derived from competence CSV for the active MODE
 _comp_df  = pd.read_csv(COMPETENCE_CSV, skipinitialspace=True)
-CHAR_CODE = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
+CHAR_CODE  = dict(zip(_comp_df['animal'].str.strip(), _comp_df['char_ani'].str.strip()))
+ANIMAL_CODE = {v: k for k, v in CHAR_CODE.items()}
 
 # Competence score -> border colour
 # low: red 1.0~3.0 / middle: yellow 3.5~6.0 / high: green 6.5~9.0
