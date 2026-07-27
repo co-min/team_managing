@@ -164,3 +164,27 @@ INST_PRACTICE_PHASE2 = (
 
 INST_PRACTICE_END     = "연습이 끝났습니다.\n잠시 후 본 실험이 시작됩니다."
 PRACTICE_END_DURATION = 3.0
+
+
+# ─── Neon eyetracker ─────────────────────────────────────────────────────────
+# Set USE_NEON=False to run without the eyetracker (NullNeonClient is used).
+USE_NEON = False
+
+NEON_DISCOVERY_TIMEOUT_S      = 10.0  # seconds to search for Companion device
+NEON_RETRY_INTERVAL_S         = 1.0   # seconds between failed send retries
+NEON_SHUTDOWN_FLUSH_TIMEOUT_S = 5.0   # seconds to wait for queue drain on exit
+
+# AprilTag positions and size in PsychoPy 'height' units.
+# height=1.0 spans the full screen height; for 1470×956 the X range is ≈ ±0.77.
+# Positions are at screen edges so they do not overlap experiment stimuli.
+# Adjust if your stimulus layout uses those areas.
+NEON_APRILTAG_SIZE = 0.08
+NEON_APRILTAG_POSITIONS = (
+    (-0.70,  0.43),   # top-left
+    ( 0.00,  0.43),   # top-center
+    ( 0.70,  0.43),   # top-right
+    (-0.74,  0.00),   # mid-left
+    ( 0.74,  0.00),   # mid-right
+    (-0.70, -0.43),   # bottom-left
+    ( 0.70, -0.43),   # bottom-right
+)

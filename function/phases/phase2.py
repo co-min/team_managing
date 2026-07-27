@@ -18,7 +18,7 @@ from utils.labjack_trigger import (
     TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
     TRIG_P2_TRIAL_START, TRIG_P2_TRIAL_END,
 )
-
+from utils.neon_client import section_start_events, section_end_events
 
 
 def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, also_hide_idx=None):
@@ -35,19 +35,26 @@ def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, al
         factory.block_stims[char_name].opacity = 1
 
 
-def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handle,
-                     choice_trig_base, excluded_idx=None,
-                     freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False,
-                     onset_trigger=None):
+def _run_choice_loop(
+    win, factory, keyboard, recorder, char_list, synergy, handle,
+    choice_trig_base, excluded_idx=None,
+    freeze_colors=False, confirm_freeze=0.15, show_confirm_overlay=False,
+    onset_trigger=None,
+    neon_client=None, neon_onset_events=None, neon_segment_label=None, neon_trial_index=None,
+):
     """
     Arrow-key preview + space-to-confirm loop.
 
-    freeze_colors=True: synergy bar colors are not updated on arrow-key navigation.
+    freeze_colors=True  : synergy bar colors are not updated on arrow-key navigation.
+    Neon section events are registered via callOnFlip at stimulus onset and
+    enqueued directly at response / timeout.
+
     Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
     """
-    response_clock = core.Clock()
-    preview_idx    = None
-    _onset_pending = onset_trigger
+    response_clock      = core.Clock()
+    preview_idx         = None
+    _onset_pending      = onset_trigger
+    _neon_onset_pending = (neon_client is not None and neon_onset_events is not None)
 
     while True:
         confirmed_idx = confirmed_code = confirmed_rt = None
@@ -76,6 +83,12 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
                     factory.border_stims[char_list[arrow_idx]].opacity = 0
 
         if confirmed_code is not None:
+            if neon_client and neon_segment_label and neon_trial_index is not None:
+                neon_client.enqueue_events(
+                    section_end_events(neon_trial_index, f"{neon_segment_label}_RESPONSE"),
+                    metadata={"task_type": "trial", "phase": neon_segment_label,
+                              "trial_index": neon_trial_index},
+                )
             factory.border_stims[char_list[confirmed_idx]].opacity = 0
             if show_confirm_overlay:
                 factory.set_animal_locked(char_list[confirmed_idx], True)
@@ -90,6 +103,12 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
             return confirmed_idx, confirmed_code, confirmed_rt
 
         if MAX_RESPONSE_TIME and response_clock.getTime() > MAX_RESPONSE_TIME:
+            if neon_client and neon_segment_label and neon_trial_index is not None:
+                neon_client.enqueue_events(
+                    section_end_events(neon_trial_index, f"{neon_segment_label}_TIMEOUT"),
+                    metadata={"task_type": "trial", "phase": neon_segment_label,
+                              "trial_index": neon_trial_index},
+                )
             recorder.log_final(win, {'response': False})
             return None, None, None
 
@@ -98,10 +117,16 @@ def _run_choice_loop(win, factory, keyboard, recorder, char_list, synergy, handl
         if _onset_pending is not None:
             win.callOnFlip(send_trigger, handle, _onset_pending)
             _onset_pending = None
+        if _neon_onset_pending:
+            neon_client.call_on_flip(
+                win, neon_onset_events,
+                task_type="trial", phase=neon_segment_label, trial_index=neon_trial_index,
+            )
+            _neon_onset_pending = False
         recorder.flip_and_log(win)
 
 
-def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle=None):
+def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, handle=None, neon_client=None):
     """
     Run one Phase 2 trial.
 
@@ -113,12 +138,15 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     synergy      : dict  {(charA, charB): int}  sorted-tuple key, from main._load_all_data()
     domain       : str   'cooking' | 'repairing' | 'tennis'
     char_order   : list  [up_animal, down_animal, right_animal, left_animal]
+    neon_client  : NeonEventClient | NullNeonClient (optional)
 
     Returns
     -------
     dict  {'choice1': char_code, 'choice2': char_code, 'rt1': float, 'rt2': float}
     or None on timeout
     """
+    trial_index = frame_log.get("trial_id", 0)
+
     event.clearEvents()
     factory = get_shared_factory(win)
     factory.apply_layout(char_order)
@@ -136,6 +164,10 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         win, factory, keyboard, recorder, char_list, synergy,
         handle, TRIG_P2_CHOICE1,
         onset_trigger=TRIG_P2_TRIAL_START,
+        neon_client=neon_client,
+        neon_onset_events=section_start_events(trial_index, "CHOICE1", first=True),
+        neon_segment_label="CHOICE1",
+        neon_trial_index=trial_index,
     )
     if choice1_code is None:
         send_trigger(handle, TRIG_P2_TRIAL_END)
@@ -158,6 +190,10 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         freeze_colors=True,
         confirm_freeze=1.0,
         show_confirm_overlay=True,
+        neon_client=neon_client,
+        neon_onset_events=section_start_events(trial_index, "CHOICE2"),
+        neon_segment_label="CHOICE2",
+        neon_trial_index=trial_index,
     )
     if choice2_code is None:
         send_trigger(handle, TRIG_P2_TRIAL_END)

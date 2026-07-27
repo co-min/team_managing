@@ -12,6 +12,7 @@ from utils.labjack_trigger import (
     TRIG_P1_CHOICE1, TRIG_P1_CHOICE2,
     TRIG_P1_TRIAL_START, TRIG_P1_TRIAL_END,
 )
+from utils.neon_client import section_start_events, section_end_events
 
 
 def _run_choice_loop(
@@ -20,14 +21,21 @@ def _run_choice_loop(
     excluded_idx=None, locked_idx=None, confirm_wait=0.15, lock_on_confirm=False,
     show_hover_border=True,
     onset_trigger=None,
+    neon_client=None, neon_onset_events=None, neon_segment_label=None, neon_trial_index=None,
 ):
     """
     Arrow-key preview + space-to-confirm loop.
+
+    Neon section events are registered via callOnFlip at stimulus onset and
+    enqueued directly at response / timeout so timestamps are as accurate as
+    possible without blocking the flip loop.
+
     Returns (chosen_idx, char_code, rt) or (None, None, None) on timeout.
     """
-    response_clock  = core.Clock()
-    preview_idx     = None
-    _onset_pending  = onset_trigger
+    response_clock       = core.Clock()
+    preview_idx          = None
+    _onset_pending       = onset_trigger
+    _neon_onset_pending  = (neon_client is not None and neon_onset_events is not None)
 
     while True:
         for pressed, t in event.getKeys(keyList=keyboard.valid_keys + ['space', 'escape'], timeStamped=response_clock):
@@ -38,6 +46,12 @@ def _run_choice_loop(
                 if preview_idx is not None:
                     chosen_code = _CHAR_CODE[char_list[preview_idx]]
                     send_trigger(handle, choice_trig_base + ANIMAL_IDX[char_list[preview_idx]])
+                    if neon_client and neon_segment_label and neon_trial_index is not None:
+                        neon_client.enqueue_events(
+                            section_end_events(neon_trial_index, f"{neon_segment_label}_RESPONSE"),
+                            metadata={"task_type": "trial", "phase": neon_segment_label,
+                                      "trial_index": neon_trial_index},
+                        )
                     if lock_on_confirm:
                         factory.set_animal_locked(char_list[preview_idx], True)
                     factory.draw_base_scene(phase_type='phase1')
@@ -62,6 +76,12 @@ def _run_choice_loop(
                         factory.show_border(char_list[arrow_idx])
 
         if MAX_RESPONSE_TIME and response_clock.getTime() > MAX_RESPONSE_TIME:
+            if neon_client and neon_segment_label and neon_trial_index is not None:
+                neon_client.enqueue_events(
+                    section_end_events(neon_trial_index, f"{neon_segment_label}_TIMEOUT"),
+                    metadata={"task_type": "trial", "phase": neon_segment_label,
+                              "trial_index": neon_trial_index},
+                )
             recorder.log_final(win, {'response': False})
             return None, None, None
 
@@ -70,14 +90,22 @@ def _run_choice_loop(
         if _onset_pending is not None:
             win.callOnFlip(send_trigger, handle, _onset_pending)
             _onset_pending = None
+        if _neon_onset_pending:
+            neon_client.call_on_flip(
+                win, neon_onset_events,
+                task_type="trial", phase=neon_segment_label, trial_index=neon_trial_index,
+            )
+            _neon_onset_pending = False
         recorder.flip_and_log(win)
 
 
-def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle=None):
+def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_order, handle=None, neon_client=None):
     """
     Run one Phase 1 trial.
     Returns dict {'choice1', 'choice2', 'rt1', 'rt2'} or None on timeout.
     """
+    trial_index = frame_log.get("trial_id", 0)
+
     event.clearEvents()
     factory = get_shared_factory(win)
     factory.apply_layout(char_order)
@@ -95,6 +123,10 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
         TRIG_P1_CHOICE1, confirm_wait=0.15,
         show_hover_border=False,
         onset_trigger=TRIG_P1_TRIAL_START,
+        neon_client=neon_client,
+        neon_onset_events=section_start_events(trial_index, "CHOICE1", first=True),
+        neon_segment_label="CHOICE1",
+        neon_trial_index=trial_index,
     )
     if choice1_code is None:
         send_trigger(handle, TRIG_P1_TRIAL_END)
@@ -120,6 +152,10 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
         TRIG_P1_CHOICE2,
         excluded_idx=choice1_idx, locked_idx=choice1_idx,
         confirm_wait=1.0, lock_on_confirm=True,
+        neon_client=neon_client,
+        neon_onset_events=section_start_events(trial_index, "CHOICE2"),
+        neon_segment_label="CHOICE2",
+        neon_trial_index=trial_index,
     )
     if choice2_code is None:
         send_trigger(handle, TRIG_P1_TRIAL_END)

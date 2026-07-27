@@ -68,13 +68,17 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
     return score
 
 
-def _launch_save_thread(subject_id, block_index, phase, domain, trial_index,
-                        stim_pair_id, char_order, result, fb_score, frame_log, global_clock):
+def _launch_save_thread(
+    subject_id, block_index, phase, domain, trial_index,
+    stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
+    session_id=None, neon_recording_id=None,
+):
     _, record = save_trial_metadata(
         subject_id=subject_id, block_i=block_index, phase=phase, domain=domain,
         trial_id=trial_index, stim_pair_id=stim_pair_id,
         char_order=char_order, result=result, feedback_score=fb_score,
         elapsed_time=global_clock.getTime(),
+        session_id=session_id, neon_recording_id=neon_recording_id,
     )
     rows     = get_rows(frame_log)
     save_dir = build_trial_save_dir(subject_id, block_index, phase, domain, stim_pair_id)
@@ -89,16 +93,20 @@ def _launch_save_thread(subject_id, block_index, phase, domain, trial_index,
 def run_block_trials(
     block_index, phase, block_schedule, cfg,
     win, global_clock, subject_id, handle, cumulative, feedback_trig,
+    neon_client=None,
 ):
     """
     Run all trials for one block.
 
     block_schedule : list of {'domain': str, 'char_order': list[str]}
     cfg            : BlockConfig — runner, data, domains, scores, ranges
+    neon_client    : NeonEventClient | NullNeonClient (optional)
     File I/O is offloaded to a background thread during the following ITI.
     """
-    n_per_domain = len(block_schedule) // len(cfg.block_domains)
-    save_thread  = None
+    n_per_domain      = len(block_schedule) // len(cfg.block_domains)
+    save_thread       = None
+    session_id        = getattr(neon_client, 'session_id',   None)
+    neon_recording_id = getattr(neon_client, 'recording_id', None)
 
     for trial_index, trial_info in enumerate(block_schedule):
         domain       = trial_info['domain']
@@ -110,13 +118,20 @@ def run_block_trials(
         if save_thread:
             save_thread.join()
 
-        result = cfg.trial_runner(win, global_clock, frame_log, cfg.data_dict, domain, char_order, handle)
+        result = cfg.trial_runner(
+            win, global_clock, frame_log, cfg.data_dict, domain, char_order, handle,
+            neon_client=neon_client,
+        )
 
-        fb_score = _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=char_order)
+        fb_score = _handle_result(
+            result, domain, cumulative, cfg, win, handle,
+            feedback_trig, n_per_domain, char_order=char_order,
+        )
 
         save_thread = _launch_save_thread(
             subject_id, block_index, phase, domain, trial_index,
             stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
+            session_id=session_id, neon_recording_id=neon_recording_id,
         )
 
     if save_thread:

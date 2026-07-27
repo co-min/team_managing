@@ -49,6 +49,8 @@ def build_trial_record(
     result: Optional[Dict[str, Any]],
     feedback_score: int = 0,
     elapsed_time: Optional[float] = None,
+    session_id: Optional[str] = None,
+    neon_recording_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build and return the trial metadata dict (does not write to disk)."""
     layout = {slot: animal for slot, animal in zip(_SLOT_NAMES, char_order)}
@@ -59,25 +61,27 @@ def build_trial_record(
     c1_animal = code_to_animal.get(c1) if c1 else None
     c2_animal = code_to_animal.get(c2) if c2 else None
     return {
-        "subject_id":     subject_id,
-        "block":          f"block_{block_i}",
-        "phase":          phase,
-        "domain":         domain,
-        "trial_id":       trial_id,
-        "stim_pair_id":   stim_pair_id,
-        "trial_layout":   layout,
-        "response_made":  responded,
-        "choice1_code":   c1,
-        "choice2_code":   c2,
-        "choice1_animal": c1_animal,
-        "choice2_animal": c2_animal,
-        "trig_choice1":   _trig_code(phase, c1_animal, 1) if responded else None,
-        "trig_choice2":   _trig_code(phase, c2_animal, 2) if responded else None,
-        "rt_choice1":     round(result['rt1'], 4) if responded and result.get('rt1') is not None else None,
-        "rt_choice2":     round(result['rt2'], 4) if responded and result.get('rt2') is not None else None,
-        "feedback_score": feedback_score if responded else None,
-        "elapsed_time":   round(elapsed_time, 4) if elapsed_time is not None else None,
-        "timestamp":      datetime.now().isoformat(timespec='seconds'),
+        "subject_id":        subject_id,
+        "session_id":        session_id,
+        "neon_recording_id": neon_recording_id,
+        "block":             f"block_{block_i}",
+        "phase":             phase,
+        "domain":            domain,
+        "trial_id":          trial_id,
+        "stim_pair_id":      stim_pair_id,
+        "trial_layout":      layout,
+        "response_made":     responded,
+        "choice1_code":      c1,
+        "choice2_code":      c2,
+        "choice1_animal":    c1_animal,
+        "choice2_animal":    c2_animal,
+        "trig_choice1":      _trig_code(phase, c1_animal, 1) if responded else None,
+        "trig_choice2":      _trig_code(phase, c2_animal, 2) if responded else None,
+        "rt_choice1":        round(result['rt1'], 4) if responded and result.get('rt1') is not None else None,
+        "rt_choice2":        round(result['rt2'], 4) if responded and result.get('rt2') is not None else None,
+        "feedback_score":    feedback_score if responded else None,
+        "elapsed_time":      round(elapsed_time, 4) if elapsed_time is not None else None,
+        "timestamp":         datetime.now().isoformat(timespec='seconds'),
     }
 
 
@@ -92,6 +96,8 @@ def save_trial_metadata(
     result: Optional[Dict[str, Any]],
     feedback_score: int = 0,
     elapsed_time: Optional[float] = None,
+    session_id: Optional[str] = None,
+    neon_recording_id: Optional[str] = None,
 ) -> tuple:
     """
     Save one trial's behavioral data to JSON.
@@ -103,6 +109,7 @@ def save_trial_metadata(
     record = build_trial_record(
         subject_id, block_i, phase, domain, trial_id, stim_pair_id,
         char_order, result, feedback_score, elapsed_time,
+        session_id=session_id, neon_recording_id=neon_recording_id,
     )
     save_dir = ensure_trial_save_dir(subject_id, block_i, phase, domain, stim_pair_id)
     out_path = save_dir / "metadata.json"
