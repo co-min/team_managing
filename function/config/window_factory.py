@@ -267,6 +267,10 @@ class VisualObjectFactory:
 
         self.char_list = list(char_order)
 
+    def draw_domain_only(self):
+        """Domain 이미지만 그립니다 — domain onset 구간(동물 등장 전)에서 사용."""
+        self.domain_stims[self._current_domain].draw()
+
     def draw_base_scene(self, phase_type='phase1'):
         """
         DOMAIN QUESTION과 ANIMALS를 순서대로 RENDERING합니다.

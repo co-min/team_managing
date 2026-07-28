@@ -86,10 +86,11 @@ MONITOR_NAME     = "testMonitor" # TODO: calibrate your monitor
 SCREEN_NUMBER    = 1
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
-MAX_RESPONSE_TIME = 30.0         # seconds; None = unlimited
-ITI_DURATION      = 1.5         # inter-trial interval (seconds)
-CHOICE_GAP        = 0.5         # seconds between Choice 1 and Choice 2
-FRAME_RATE        = 60          # Hz – used for frame log sanity checks
+MAX_RESPONSE_TIME    = 30.0     # seconds; None = unlimited
+ITI_DURATION         = 1     # inter-trial interval (seconds)
+CHOICE_GAP           = 0.5      # seconds between Choice 1 and Choice 2
+FRAME_RATE           = 60       # Hz – used for frame log sanity checks
+DOMAIN_ONSET_DURATION = 0.7     # seconds domain image is shown before choices appear
 
 # ─── Text ────────────────────────────────────────────────────────────────────
 FONT       = "AppleGothic" if platform.system() == "Darwin" else "Malgun Gothic"

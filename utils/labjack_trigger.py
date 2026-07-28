@@ -51,6 +51,10 @@ ANIMAL_IDX = {
 
 TRIG_P3_STIMULUS = 30   # Phase 3 (choice)
 
+# Domain 이미지만 표시된 뒤 선택지(동물)가 나타나는 시점
+TRIG_P1_CHOICE_ONSET = 201  # P1 선택지 등장
+TRIG_P2_CHOICE_ONSET = 202  # P2 선택지 등장
+
 # =========================================
 # Choice — phase + choice 순서 + 동물 인코딩
 #   base + ANIMAL_IDX (0-23) → 동물명으로 조회

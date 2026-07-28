@@ -9,7 +9,7 @@ Trial flow
 from psychopy import event, core
 
 from function.config.window_factory import get_shared_factory
-from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
+from function.config.settings import MAX_RESPONSE_TIME, CHOICE_GAP, DOMAIN_ONSET_DURATION, CHAR_CODE as _CHAR_CODE, SYNERGY_COLOR as _SYNERGY_COLOR
 from function.io.frame_logger import FrameRecorder
 from function.io.frame_marker import get_shared_marker
 from utils.arrow_keyboard import ArrowKeyboard
@@ -17,8 +17,11 @@ from utils.labjack_trigger import (
     send_trigger, ANIMAL_IDX,
     TRIG_P2_CHOICE1, TRIG_P2_CHOICE2,
     TRIG_P2_TRIAL_START, TRIG_P2_TRIAL_END,
+    TRIG_P2_CHOICE_ONSET,
 )
 from utils.neon_client import section_start_events, section_end_events
+
+from function.phases.common import show_domain_onset as _show_domain_onset
 
 
 def _apply_synergy_colors(factory, char_list, pivot_idx, pivot_code, synergy, also_hide_idx=None):
@@ -158,14 +161,24 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     keyboard = ArrowKeyboard(win, pos=(0, factory.center_y))
     recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
 
+    # ── Domain onset (동물 없이 domain만 표시) ────────────────────────────────
+    _show_domain_onset(
+        win, factory, recorder, handle,
+        trial_start_trigger=TRIG_P2_TRIAL_START,
+        neon_client=neon_client,
+        trial_index=trial_index,
+        duration=DOMAIN_ONSET_DURATION,
+    )
+    recorder.start_segment()
+
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, synergy,
         handle, TRIG_P2_CHOICE1,
-        onset_trigger=TRIG_P2_TRIAL_START,
+        onset_trigger=TRIG_P2_CHOICE_ONSET,
         neon_client=neon_client,
-        neon_onset_events=section_start_events(trial_index, "CHOICE1", first=True),
+        neon_onset_events=section_start_events(trial_index, "CHOICE1"),
         neon_segment_label="CHOICE1",
         neon_trial_index=trial_index,
     )
