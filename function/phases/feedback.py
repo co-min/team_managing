@@ -17,7 +17,7 @@ from utils.labjack_trigger import send_trigger
 # ── Layout constants ──────────────────────────────────────────────────────────
 
 _MONKEY_PATH     = "image/monkey.png"
-_MONKEY_SIZE     = (300, 300)
+_MONKEY_SIZE     = (250, 250)
 _MONKEY_POS      = (-240,   0)
 _BUBBLE_POS      = ( 250,   0)
 _BUBBLE_TAIL_POS = (   5,   0)
@@ -25,7 +25,10 @@ _DOMAIN_Y        = 260
 
 _CHOICE_ANIMAL_SIZE = (150, 150)
 _CHOICE_L_POS       = ( 165, 250)   # bubble-center x, left
-_CHOICE_R_POS       = ( 335, 250)   # bubble-center x, right
+_CHOICE_R_POS       = ( 335, 250) 
+
+_DOMAIN_IMG_SIZE = (150, 150)
+_DOMAIN_IMG_POS = ( -200 , 250)
 
 _monkey_stim_cache: dict = {}
 
@@ -108,9 +111,18 @@ def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
             _monkey_stim_cache[wid] = None
     return _monkey_stim_cache[wid]
 
+def _build_domain_img_stims(win: visual.Window, domain: str) -> list:
+    try:
+        return [visual.ImageStim(
+            win, image=f"image/domains/{domain}.png",
+            pos=_DOMAIN_IMG_POS, size=_DOMAIN_IMG_SIZE,
+        )]
+    except Exception:
+        return []
+
 
 def _build_choice_animal_stims(win: visual.Window,
-                               animal1: str = None, animal2: str = None) -> list:
+                            animal1: str = None, animal2: str = None) -> list:
     stims = []
     for animal, pos in [(animal1, _CHOICE_L_POS), (animal2, _CHOICE_R_POS)]:
         if not animal:
@@ -170,7 +182,7 @@ _DOMAIN: dict[str, dict] = {
             "조금 아쉬워",             # stage 3
             "이 요리는 보통이야",      # stage 4
             "정말 맛있어!",           # stage 5
-            "최고야!",                # stage 6
+            "완벽하게 최고야!",                # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -244,10 +256,11 @@ def run_feedback(
             ))
 
     stims = (
-        _build_choice_animal_stims(win, animal1, animal2)
+        _build_domain_img_stims(win, domain)
+        + _build_choice_animal_stims(win, animal1, animal2)
         + domain_cfg['build'](win, stage, domain_cfg)
         + _build_monkey_stims(win, stage, domain_cfg, score=score, domain=domain,
-                              score_ranges=active_ranges)
+                            score_ranges=active_ranges)
         + domain_score_stims
         + [
             visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",

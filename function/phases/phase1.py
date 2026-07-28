@@ -80,7 +80,7 @@ def _run_choice_loop(
                 neon_client.enqueue_events(
                     section_end_events(neon_trial_index, f"{neon_segment_label}_TIMEOUT"),
                     metadata={"task_type": "trial", "phase": neon_segment_label,
-                              "trial_index": neon_trial_index},
+                            "trial_index": neon_trial_index},
                 )
             recorder.log_final(win, {'response': False})
             return None, None, None
@@ -117,11 +117,15 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
     recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
+    for char_name in char_list:
+        score = competence[_CHAR_CODE[char_name]][domain]
+        factory.set_border_color(char_name, _get_comp_color(score))
+
     keyboard.reset_colors()
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, handle,
         TRIG_P1_CHOICE1, confirm_wait=0.15,
-        show_hover_border=False,
+        show_hover_border=True,
         onset_trigger=TRIG_P1_TRIAL_START,
         neon_client=neon_client,
         neon_onset_events=section_start_events(trial_index, "CHOICE1", first=True),
@@ -134,11 +138,9 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
     # core.wait(CHOICE_GAP)
 
-    # Apply competence colors (hide_border로 숨김; Choice 2 호버 시 show_border로 표시)
     for char_name in char_list:
-        score = competence[_CHAR_CODE[char_name]][domain]
-        factory.set_border_color(char_name, _get_comp_color(score))
         factory.hide_border(char_name)
+
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
     factory.set_animal_locked(char_list[choice1_idx], True)

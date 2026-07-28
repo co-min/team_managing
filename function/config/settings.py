@@ -11,7 +11,7 @@ _STIMULI = ROOT_DIR / 'stimuli'
 # MODE 1 : competence_table.csv       + score_table.csv        (3 domains)
 # MODE 2 : competence_table_domain2.csv + score_table_domain2.csv (2 domains)
 # MODE 3 : phase1 competency obs. 3 domains 18 trials / phase2 synergy obs. 2 domains 16 trials
-MISSION_MODE = 3
+MISSION_MODE = 4
 
 # DOMAIN_ORDER: trial 내 domain 제시 순서
 #   'random'     — seed 고정 랜덤 셔플
@@ -23,6 +23,8 @@ _D3_COMP  = _STIMULI / 'domain3' / 'competence_table.csv'
 _D3_SCORE = _STIMULI / 'domain3' / 'score_table.csv'
 _D2_COMP  = _STIMULI / 'domain2' / 'competence_table_domain2.csv'
 _D2_SCORE = _STIMULI / 'domain2' / 'score_table_domain2.csv'
+_D3_RANKED_SCORE = _STIMULI / 'domain3' / 'score_table_ranked.csv'
+
 
 _DOMAINS_3 = ['cooking', 'repairing', 'tennis']
 _DOMAINS_2 = ['cooking', 'repairing']
@@ -52,7 +54,7 @@ elif MISSION_MODE == 2:
     P1_TRIALS         = 16
     P2_TRIALS         = 16
     COMPETENCE_COLOR  = _COLOR_4
-else:  # MISSION_MODE == 3
+elif  MISSION_MODE == 3:
     COMPETENCE_CSV    = _D3_COMP
     SCORE_CSV         = _D3_SCORE
     P2_COMPETENCE_CSV = _D2_COMP
@@ -62,6 +64,17 @@ else:  # MISSION_MODE == 3
     P1_TRIALS         = 18
     P2_TRIALS         = 16
     COMPETENCE_COLOR  = _COLOR_3
+
+else:
+    COMPETENCE_CSV    = _D3_COMP
+    SCORE_CSV         = _D3_RANKED_SCORE
+    P2_COMPETENCE_CSV = _D3_COMP
+    P2_SCORE_CSV      = _D3_RANKED_SCORE
+    DOMAINS           = _DOMAINS_3
+    P2_DOMAINS        = _DOMAINS_3
+    P1_TRIALS         = 18
+    P2_TRIALS         = 18
+    COMPETENCE_COLOR  = _COLOR_3    
 
 
 # ─── Window ───────────────────────────────────────────────────────────────────
@@ -130,16 +143,16 @@ SYNERGY_COLOR = dict(zip(_scores, _colors))
 INST_PHASE1 = """\
 [{block_num} / {total_blocks}]
 
-이번 단계에서는 능력이 보입니다.
-팀워크를 예상하여 동물 두 마리를 골라서 점수를 최대한 높여주세요.
+이번 단계에서, 각자 수행하는 능력이 보여요.
+숨겨진 팀워크를 생각하면서 만점인 동물 두 마리를 찾아볼까요?
 
 [Space] 키를 눌러 시작"""
 
 INST_PHASE2 = """\
 [{block_num} / {total_blocks} 블록]
 
-이번 단계에서는 팀워크가 보입니다.
-두 동물의 능력의 합을 예상하여 두 마리를 골라서 점수를 최대한 높여주세요.
+이번 단계에서, 협력하는 팀워크가 보여요.
+숨겨진 수행하는 능력을 예상하면서 만점인 동물 두 마리를 찾아볼까요?
 
 [Space] 키를 눌러 시작"""
 
@@ -152,7 +165,7 @@ PRACTICE_P2_TRIALS = 4      # Phase 2 연습 총 trial 수
 
 INST_PRACTICE_PHASE1 = (
     "연습 1단계: 능력치\n\n"
-    "능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.\n\n"
+    "숨겨진 팀워크를 생각해보세요. 이 중 만점인 두 동물은 누굴까요?\n\n"
     "[Space] 키를 눌러 시작"
 )
 

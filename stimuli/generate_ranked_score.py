@@ -5,7 +5,7 @@ import sys
 BASE_DIR = os.path.dirname(__file__)
 
 CONFIGS = {
-    'domain1': {
+    'domain3': {
         'input_file':  'domain3/score_table.csv',
         'domains':     ['cooking', 'repairing', 'tennis'],
         'output_file': 'domain3/score_table_ranked.csv',
@@ -55,11 +55,11 @@ def run(config_name):
 
     print(f"[{config_name}] Saved → {out_path}")
     header = f"{'pair_id':>8} {'char1':>6} {'char2':>6}" + \
-             ''.join(f" {f'sc_{d}':>12}" for d in domains)
+            ''.join(f" {f'sc_{d}':>12}" for d in domains)
     print(header)
     for r in ranked:
         line = f"{r['pair_id']:>8} {r['char1']:>6} {r['char2']:>6}" + \
-               ''.join(f" {r[f'sc_{d}']:>12}" for d in domains)
+            ''.join(f" {r[f'sc_{d}']:>12}" for d in domains)
         print(line)
 
 
