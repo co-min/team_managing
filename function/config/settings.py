@@ -182,7 +182,7 @@ PRACTICE_END_DURATION = 3.0
 
 # ─── Neon eyetracker ─────────────────────────────────────────────────────────
 # Set USE_NEON=False to run without the eyetracker (NullNeonClient is used).
-USE_NEON = False
+USE_NEON = True
 
 NEON_DISCOVERY_TIMEOUT_S      = 10.0  # seconds to search for Companion device
 NEON_RETRY_INTERVAL_S         = 1.0   # seconds between failed send retries
@@ -195,10 +195,11 @@ NEON_SHUTDOWN_FLUSH_TIMEOUT_S = 5.0   # seconds to wait for queue drain on exit
 NEON_APRILTAG_SIZE = 0.08
 NEON_APRILTAG_POSITIONS = (
     (-0.70,  0.43),   # top-left
-    ( 0.00,  0.43),   # top-center
     ( 0.70,  0.43),   # top-right
     (-0.74,  0.00),   # mid-left
     ( 0.74,  0.00),   # mid-right
+    # (0.3, 0.43),
+    # (-0.3, 0.43),
     (-0.70, -0.43),   # bottom-left
     ( 0.70, -0.43),   # bottom-right
 )

@@ -69,14 +69,18 @@ def initiate() -> ExperimentContext:
     neon_recording_id = None
 
     if USE_NEON:
-        apriltags   = create_neon_apriltags(win, NEON_APRILTAG_POSITIONS, NEON_APRILTAG_SIZE)
-        neon_client = NeonEventClient(
-            subject_id=subject_id,
-            session_id=session_id,
-            discovery_timeout_s=NEON_DISCOVERY_TIMEOUT_S,
-            retry_interval_s=NEON_RETRY_INTERVAL_S,
-        )
-        neon_recording_id = neon_client.start_session()
+        apriltags = create_neon_apriltags(win, NEON_APRILTAG_POSITIONS, NEON_APRILTAG_SIZE)
+        try:
+            neon_client = NeonEventClient(
+                subject_id=subject_id,
+                session_id=session_id,
+                discovery_timeout_s=NEON_DISCOVERY_TIMEOUT_S,
+                retry_interval_s=NEON_RETRY_INTERVAL_S,
+            )
+            neon_recording_id = neon_client.start_session()
+        except RuntimeError as e:
+            print(f" Neon not found → running without eye-tracker ({e})")
+            neon_client = NullNeonClient()
     else:
         neon_client = NullNeonClient()
 
