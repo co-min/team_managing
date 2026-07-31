@@ -16,6 +16,7 @@ from function.phases.block_runner import BlockConfig, run_block_trials
 from function.phases.phase1 import run_phase1_trial
 from function.phases.phase2 import run_phase2_trial
 from function.phases.feedback import P2_SCORE_RANGES
+from function.phases.ending import run_ending
 from function.config.settings import NEON_SHUTDOWN_FLUSH_TIMEOUT_S
 from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK
 from utils.screen_utils import show_instructions
@@ -112,6 +113,7 @@ def main() -> None:
                 feedback_trig=_FEEDBACK_TRIGGERS[phase],
                 neon_client=neon_client,
             )
+        run_ending(win, subject_id, cumulative['total'])
     finally:
         neon_client.close(NEON_SHUTDOWN_FLUSH_TIMEOUT_S)
         save_neon_event_log(
