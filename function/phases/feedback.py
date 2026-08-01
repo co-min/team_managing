@@ -5,7 +5,7 @@ Feedback phase — domain-specific score display with monkey narrator.
   repairing : cleanliness level text  (stage 1=dirty → 6=clean)
   cooking   : taste-label text
 
-Score normalisation: domain min/max from stimuli/score_table.csv → stage 1–6
+Score normalization: domain min/max from stimuli/score_table.csv → stage 1-6
 """
 
 import csv
@@ -97,7 +97,7 @@ def _monkey_text(score: float, stage: int, domain_cfg: dict, domain: str = '',
     ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
     _, hi = ranges.get(domain, (0.0, 10.0))
     max_score = int(hi) if hi == int(hi) else hi
-    return f"{max_score}점 만점에 {score:g}점이야.\n{comment}"
+    return f"You scored {score:g} out of {max_score} points.\n{comment}"
 
 
 def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
@@ -164,12 +164,12 @@ _DOMAIN: dict[str, dict] = {
     'repairing': {
         'build':  _build_text_stims,
         'monkey': [
-            "아직 많이 지저분해...",   # stage 1
-            "꽤 지저분해",             # stage 2
-            "조금 지저분해",           # stage 3
-            "청소 상태가 보통이야",    # stage 4
-            "꽤 깨끗해!",             # stage 5
-            "완벽하게 깨끗해!",       # stage 6
+            "Still pretty dirty...",     # stage 1
+            "Quite dirty",               # stage 2
+            "A little dirty",            # stage 3
+            "The cleanliness is average", # stage 4
+            "Pretty clean!",              # stage 5
+            "Perfectly clean!",           # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -177,12 +177,12 @@ _DOMAIN: dict[str, dict] = {
     'cooking': {
         'build':  _build_text_stims,
         'monkey': [
-            "이 요리는 맛없어...",     # stage 1
-            "이 요리는 별로야",        # stage 2
-            "조금 아쉬워",             # stage 3
-            "이 요리는 보통이야",      # stage 4
-            "정말 맛있어!",           # stage 5
-            "완벽하게 최고야!",                # stage 6
+            "This dish tastes bad...",   # stage 1
+            "This dish isn't great",     # stage 2
+            "A bit disappointing",       # stage 3
+            "This dish is average",      # stage 4
+            "Really delicious!",         # stage 5
+            "Absolutely the best!",      # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -190,12 +190,12 @@ _DOMAIN: dict[str, dict] = {
     'tennis': {
         'build':  _build_text_stims,
         'monkey': [
-            "경기를 많이 졌어...",     # stage 1
-            "꽤 아쉬운 경기야",       # stage 2
-            "조금 아쉬워",             # stage 3
-            "보통 경기야",             # stage 4
-            "정말 잘 했어!",          # stage 5
-            "완벽한 경기야!",         # stage 6
+            "Lost the match badly...",   # stage 1
+            "A pretty disappointing match", # stage 2
+            "A bit disappointing",       # stage 3
+            "An average match",          # stage 4
+            "You played really well!",   # stage 5
+            "A perfect match!",          # stage 6
         ],
         'colors': _RESULT_COLORS,
         'stims':  [],
@@ -205,7 +205,7 @@ _DOMAIN: dict[str, dict] = {
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
-_DOMAIN_KO_ALL = {'cooking': '요리', 'repairing': '수리', 'tennis': '테니스'}
+_DOMAIN_KO_ALL = {'cooking': 'Cooking', 'repairing': 'Repairing', 'tennis': 'Tennis'}
 _DOMAIN_KO = {d: _DOMAIN_KO_ALL[d] for d in DOMAINS}
 
 def _make_domain_xs(domains: list) -> dict:
@@ -251,7 +251,7 @@ def run_feedback(
             val   = float(domain_scores.get(d, 0))
             color = "#FF9800" if d == domain else "#AAAAAA"
             domain_score_stims.append(visual.TextStim(
-                win, text=f"{domain_ko[d]}: {val}점",
+                win, text=f"{domain_ko[d]}: {val} pts",
                 pos=(x, -225), color=color, height=38, font=FONT, bold=(d == domain),
             ))
 
@@ -263,9 +263,9 @@ def run_feedback(
                             score_ranges=active_ranges)
         + domain_score_stims
         + [
-            visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",
+            visual.TextStim(win, text=f"Phase score: {int(phase_score)}/{int(max_phase)} pts",
                             pos=(0, -285), color="#AAAAAA", height=40, font=FONT, bold=False),
-            visual.TextStim(win, text=f"총 점수: {float(cumulative_score)}점",
+            visual.TextStim(win, text=f"Total score: {float(cumulative_score)} pts",
                             pos=(0, -340), color="#FFD700", height=48, font=FONT, bold=True),
         ]
     )
