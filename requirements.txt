@@ -1,0 +1,4 @@
+labjack-ljm
+psychopy
+scikit-learn
+psychopy-eyetracker-pupil-labs
