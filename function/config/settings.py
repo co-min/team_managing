@@ -165,14 +165,14 @@ PRACTICE_P1_TRIALS = 4      # Phase 1 연습 총 trial 수
 PRACTICE_P2_TRIALS = 4      # Phase 2 연습 총 trial 수
 
 INST_PRACTICE_PHASE1 = (
-    "연습 1단계: 능력치\n\n"
+    "연습 1단계: 보이는 능력치\n\n"
     "숨겨진 팀워크를 생각해보세요. 이 중 만점인 두 동물은 누굴까요?\n\n"
     "[Space] 키를 눌러 시작"
 )
 
 INST_PRACTICE_PHASE2 = (
-    "연습 2단계: 협력도\n\n"
-    "능력치를 고려해 동물 두 마리를 골라서 점수를 최대한 높여주세요.\n\n"
+    "연습 2단계: 보이는 팀워크\n\n"
+    "숨겨진 개인 능력을 생각해보세요. 이 중 만점인 두 동물은 누굴까요?\n\n"
     "[Space] 키를 눌러 시작"
 )
 

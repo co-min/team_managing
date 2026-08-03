@@ -113,7 +113,7 @@ def main() -> None:
                 feedback_trig=_FEEDBACK_TRIGGERS[phase],
                 neon_client=neon_client,
             )
-        run_ending(win, subject_id, cumulative['total'])
+        run_ending(win, subject_id, cumulative['total'], global_clock.getTime())
     finally:
         neon_client.close(NEON_SHUTDOWN_FLUSH_TIMEOUT_S)
         save_neon_event_log(
