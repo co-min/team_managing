@@ -44,6 +44,7 @@ if MISSION_MODE == 1:
     P1_TRIALS         = 18
     P2_TRIALS         = 18
     COMPETENCE_COLOR  = _COLOR_3
+    BLOCK_PHASES      = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 elif MISSION_MODE == 2:
     COMPETENCE_CSV    = _D2_COMP
     P2_COMPETENCE_CSV = _D2_COMP
@@ -54,7 +55,8 @@ elif MISSION_MODE == 2:
     P1_TRIALS         = 16
     P2_TRIALS         = 16
     COMPETENCE_COLOR  = _COLOR_4
-elif  MISSION_MODE == 3:
+    BLOCK_PHASES      = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
+elif MISSION_MODE == 3:
     COMPETENCE_CSV    = _D3_COMP
     SCORE_CSV         = _D3_SCORE
     P2_COMPETENCE_CSV = _D2_COMP
@@ -64,7 +66,7 @@ elif  MISSION_MODE == 3:
     P1_TRIALS         = 18
     P2_TRIALS         = 16
     COMPETENCE_COLOR  = _COLOR_3
-
+    BLOCK_PHASES      = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 else:
     COMPETENCE_CSV    = _D3_COMP
     SCORE_CSV         = _D3_RANKED_SCORE
@@ -74,7 +76,8 @@ else:
     P2_DOMAINS        = _DOMAINS_3
     P1_TRIALS         = 18
     P2_TRIALS         = 18
-    COMPETENCE_COLOR  = _COLOR_3    
+    COMPETENCE_COLOR  = _COLOR_3
+    BLOCK_PHASES      = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 
 
 # ─── Window ───────────────────────────────────────────────────────────────────

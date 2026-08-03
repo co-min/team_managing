@@ -5,7 +5,7 @@ from function.config.settings import (
     MISSION_MODE,
     P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2,
     DOMAINS, P2_DOMAINS, DOMAIN_ORDER,
-    PRACTICE_MODE,
+    PRACTICE_MODE, BLOCK_PHASES,
 )
 from function.practice.practice_loop import run_practice
 from function.io.data_loader import load_all_data
@@ -22,10 +22,6 @@ from utils.labjack_trigger import TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FE
 from utils.screen_utils import show_instructions
 from utils.neon_client import save_neon_event_log
 
-
-# Block 1/3/5: Synergy Infer, Competency Shown  → run_phase1_trial + competence data
-# Block 2/4/6: Synergy Shown, Competency Infer  → run_phase2_trial + synergy data
-BLOCK_PHASES = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 
 _SCHEDULE_SEED = 42
 _FEEDBACK_TRIGGERS = {
