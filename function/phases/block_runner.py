@@ -12,8 +12,18 @@ from function.io.subject_csv import append_trial_row, append_frame_rows
 from function.io.summary import save_experiment_summary
 from function.phases.feedback import run_feedback
 from function.config.settings import CHAR_CODE as _CHAR_CODE
+from function.config.window_factory import get_shared_factory
 from utils.inter_trial import run_gaussian_iti
-from utils.labjack_trigger import send_trigger
+from utils.labjack_trigger import (
+    send_trigger,
+    TRIG_P1_BLOCK_START, TRIG_P2_BLOCK_START, TRIG_P3_BLOCK_START,
+)
+
+_BLOCK_START_TRIG = {
+    'phase_1': TRIG_P1_BLOCK_START,
+    'phase_2': TRIG_P2_BLOCK_START,
+    'phase_3': TRIG_P3_BLOCK_START,
+}
 
 
 @dataclass
@@ -34,7 +44,7 @@ def _persist_trial(subject_id, record, rows, save_dir):
     save_frame_log(rows, save_dir)
 
 
-def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=None):
+def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=None, neon_client=None):
     """Update cumulative scores and show feedback. Returns the feedback score (0 if no result)."""
     if not result:
         return 0
@@ -64,6 +74,7 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
         score_ranges=cfg.score_ranges,
         animal1=animal1,
         animal2=animal2,
+        neon_client=neon_client,
     )
     return score
 
@@ -72,6 +83,7 @@ def _launch_save_thread(
     subject_id, block_index, phase, domain, trial_index,
     stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
     session_id=None, neon_recording_id=None,
+    win_size=None, slot_info=None,
 ):
     _, record = save_trial_metadata(
         subject_id=subject_id, block_i=block_index, phase=phase, domain=domain,
@@ -79,6 +91,9 @@ def _launch_save_thread(
         char_order=char_order, result=result, feedback_score=fb_score,
         elapsed_time=global_clock.getTime(),
         session_id=session_id, neon_recording_id=neon_recording_id,
+        win_size=win_size,
+        slot_coords=slot_info.get('slot_coords') if slot_info else None,
+        animal_size_px=slot_info.get('animal_size_px') if slot_info else None,
     )
     rows     = get_rows(frame_log)
     save_dir = build_trial_save_dir(subject_id, block_index, phase, domain, stim_pair_id)
@@ -107,6 +122,14 @@ def run_block_trials(
     save_thread       = None
     session_id        = getattr(neon_client, 'session_id',   None)
     neon_recording_id = getattr(neon_client, 'recording_id', None)
+    slot_info         = get_shared_factory(win).get_slot_info()
+    win_size          = (int(win.size[0]), int(win.size[1]))
+
+    send_trigger(handle, _BLOCK_START_TRIG.get(phase, 0))
+    neon_client.enqueue_events(
+        "BLOCK_START",
+        metadata={"task_type": "block", "phase": phase, "trial_index": block_index},
+    )
 
     for trial_index, trial_info in enumerate(block_schedule):
         domain       = trial_info['domain']
@@ -126,12 +149,14 @@ def run_block_trials(
         fb_score = _handle_result(
             result, domain, cumulative, cfg, win, handle,
             feedback_trig, n_per_domain, char_order=char_order,
+            neon_client=neon_client,
         )
 
         save_thread = _launch_save_thread(
             subject_id, block_index, phase, domain, trial_index,
             stim_pair_id, char_order, result, fb_score, frame_log, global_clock,
             session_id=session_id, neon_recording_id=neon_recording_id,
+            win_size=win_size, slot_info=slot_info,
         )
 
     if save_thread:

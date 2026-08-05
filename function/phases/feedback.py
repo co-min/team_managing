@@ -233,6 +233,7 @@ def run_feedback(
     score_ranges: dict = None,
     animal1: str = None,
     animal2: str = None,
+    neon_client=None,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
     active_ranges  = score_ranges if score_ranges is not None else _SCORE_RANGES
@@ -279,6 +280,8 @@ def run_feedback(
             stim.draw()
         if not trigger_sent:
             win.callOnFlip(send_trigger, handle, trig_code)
+            if neon_client is not None:
+                neon_client.call_on_flip(win, "FEEDBACK_ONSET", task_type="feedback")
             trigger_sent = True
         win.flip()
         check_escape(win)

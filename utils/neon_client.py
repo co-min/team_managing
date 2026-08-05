@@ -171,7 +171,7 @@ class NeonEventClient:
         Returns the recording_id string.
         """
         self._estimate_clock_offset()
-        recording_id = self._device.recording_id
+        recording_id = self._fetch_recording_id()
         if recording_id is None:
             raise RuntimeError(
                 "[Neon] No active recording found. "
@@ -184,6 +184,30 @@ class NeonEventClient:
             metadata={"task_type": "session"},
         )
         return self.recording_id
+
+    def _fetch_recording_id(self) -> Optional[str]:
+        """Fetch the active recording ID from the Companion REST API /api/status."""
+        try:
+            resp = _requests.get(f"{self._base_url}/api/status", timeout=5.0)
+            resp.raise_for_status()
+            data = resp.json()
+
+            # New API format: {"message": "Success", "result": [{"model": "Recording", "data": {...}}, ...]}
+            result = data.get("result")
+            if isinstance(result, list):
+                for item in result:
+                    if item.get("model") == "Recording":
+                        rid = item.get("data", {}).get("id")
+                        return str(rid) if rid else None
+                return None
+
+            # Old API format: {"recording": {"id": "..."}}
+            rec = data.get("recording") or {}
+            rid = rec.get("id")
+            return str(rid) if rid else None
+        except Exception:
+            # Fallback for older library versions that exposed recording_id directly
+            return getattr(self._device, "recording_id", None)
 
     def _estimate_clock_offset(self, n_samples: int = 5) -> None:
         offsets = []
@@ -371,6 +395,25 @@ def section_end_events(trial_index: int, outcome: str) -> Tuple[str, ...]:
         → ("TRIAL_001_CHOICE1_RESPONSE", "TRIAL_SECTION_END")
     """
     return (f"TRIAL_{trial_index:03d}_{outcome.upper()}", "TRIAL_SECTION_END")
+
+
+def frame_event_marker(segment_label: str, event_type: str = "onset") -> str:
+    """Return an event_marker string for frame_log.csv.
+
+    Mirrors the Neon section-event naming so offline analysis can join the two
+    logs by matching event labels (e.g. "CHOICE1_onset" ↔ "TRIAL_001_CHOICE1").
+
+    Parameters
+    ----------
+    segment_label : "DOMAIN_ONSET" | "CHOICE1" | "CHOICE2" | ...
+    event_type    : "onset" | "response" | "timeout"
+
+    Example
+    -------
+    frame_event_marker("CHOICE1")            → "CHOICE1_onset"
+    frame_event_marker("CHOICE2", "timeout") → "CHOICE2_timeout"
+    """
+    return f"{segment_label.upper()}_{event_type.lower()}"
 
 
 # ─── AprilTag factory ─────────────────────────────────────────────────────────

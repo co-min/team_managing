@@ -127,7 +127,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
         trial_index=trial_index,
         duration=DOMAIN_ONSET_DURATION,
     )
-    recorder.start_segment()
+    recorder.start_segment("CHOICE1")
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     # for char_name in char_list:
@@ -161,7 +161,7 @@ def run_phase1_trial(win, global_clock, frame_log, competence, domain, char_orde
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
     factory.set_animal_locked(char_list[choice1_idx], True)
-    recorder.start_segment()
+    recorder.start_segment("CHOICE2")
     keyboard.reset_colors()
     keyboard.set_excluded(choice1_idx)
     factory.show_border(char_list[choice1_idx])

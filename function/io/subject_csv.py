@@ -25,6 +25,12 @@ _TRIAL_FIELDS = [
     "subject_id", "global_trial_id", "block_trial_id",
     "block", "phase", "domain", "trial_id", "stim_pair_id",
     "layout_up", "layout_down", "layout_right", "layout_left",
+    "pos_up_x",    "pos_up_y",
+    "pos_down_x",  "pos_down_y",
+    "pos_right_x", "pos_right_y",
+    "pos_left_x",  "pos_left_y",
+    "animal_size_px",
+    "win_width", "win_height",
     "response_made",
     "choice1_code", "choice2_code", "choice1_animal", "choice2_animal",
     "trig_choice1", "trig_choice2",
@@ -60,14 +66,25 @@ def append_trial_row(subject_id: str, record: Dict[str, Any]) -> None:
                 if row.get("block") == current_block:
                     block_trial_id += 1
 
-    layout = record.get("trial_layout", {})
-    flat = {k: v for k, v in record.items() if k != "trial_layout"}
+    layout      = record.get("trial_layout", {})
+    slot_coords = record.get("slot_coords") or {}
+    win_size_raw = record.get("win_size")
+
+    flat = {k: v for k, v in record.items() if k not in ("trial_layout", "slot_coords", "win_size")}
     flat["global_trial_id"] = global_trial_id
     flat["block_trial_id"]  = block_trial_id
     flat["layout_up"]    = layout.get("up")
     flat["layout_down"]  = layout.get("down")
     flat["layout_right"] = layout.get("right")
     flat["layout_left"]  = layout.get("left")
+
+    if win_size_raw:
+        flat["win_width"]  = win_size_raw[0]
+        flat["win_height"] = win_size_raw[1]
+    for slot in ('up', 'down', 'right', 'left'):
+        pos = slot_coords.get(slot)
+        flat[f"pos_{slot}_x"] = pos[0] if pos is not None else None
+        flat[f"pos_{slot}_y"] = pos[1] if pos is not None else None
 
     with open(csv_path, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=_TRIAL_FIELDS, extrasaction="ignore")

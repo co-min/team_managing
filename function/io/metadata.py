@@ -51,6 +51,9 @@ def build_trial_record(
     elapsed_time: Optional[float] = None,
     session_id: Optional[str] = None,
     neon_recording_id: Optional[str] = None,
+    win_size: Optional[tuple] = None,
+    slot_coords: Optional[Dict[str, Any]] = None,
+    animal_size_px: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Build and return the trial metadata dict (does not write to disk)."""
     layout = {slot: animal for slot, animal in zip(_SLOT_NAMES, char_order)}
@@ -82,6 +85,9 @@ def build_trial_record(
         "feedback_score":    feedback_score if responded else None,
         "elapsed_time":      round(elapsed_time, 4) if elapsed_time is not None else None,
         "timestamp":         datetime.now().isoformat(timespec='seconds'),
+        "win_size":          [int(v) for v in win_size] if win_size is not None else None,
+        "slot_coords":       {k: [int(x), int(y)] for k, (x, y) in slot_coords.items()} if slot_coords else None,
+        "animal_size_px":    animal_size_px,
     }
 
 
@@ -98,6 +104,9 @@ def save_trial_metadata(
     elapsed_time: Optional[float] = None,
     session_id: Optional[str] = None,
     neon_recording_id: Optional[str] = None,
+    win_size: Optional[tuple] = None,
+    slot_coords: Optional[Dict[str, Any]] = None,
+    animal_size_px: Optional[int] = None,
 ) -> tuple:
     """
     Save one trial's behavioral data to JSON.
@@ -110,9 +119,48 @@ def save_trial_metadata(
         subject_id, block_i, phase, domain, trial_id, stim_pair_id,
         char_order, result, feedback_score, elapsed_time,
         session_id=session_id, neon_recording_id=neon_recording_id,
+        win_size=win_size, slot_coords=slot_coords, animal_size_px=animal_size_px,
     )
     save_dir = ensure_trial_save_dir(subject_id, block_i, phase, domain, stim_pair_id)
     out_path = save_dir / "metadata.json"
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
     return out_path, record
+
+
+def save_session_metadata(
+    subject_id: str,
+    session_id: str,
+    win_size: tuple,
+    slot_info: Optional[Dict[str, Any]] = None,
+    neon_recording_id: Optional[str] = None,
+) -> Path:
+    """Save one-time session-level metadata to data/sub-{subject_id}/session_metadata.json.
+
+    Captures the actual runtime win.size (ground truth for all slot coordinates),
+    plus slot positions and animal_size_px so AOI construction needs no code reconstruction.
+    """
+    from function.config.settings import WINDOW_FULLSCR, MONITOR_NAME, FRAME_RATE, MISSION_MODE
+    from function.io.path_builder import get_session_metadata_path
+
+    record: Dict[str, Any] = {
+        "subject_id":        subject_id,
+        "session_id":        session_id,
+        "timestamp":         datetime.now().isoformat(timespec='seconds'),
+        "win_width":         int(win_size[0]),
+        "win_height":        int(win_size[1]),
+        "win_fullscr":       WINDOW_FULLSCR,
+        "monitor_name":      MONITOR_NAME,
+        "frame_rate":        FRAME_RATE,
+        "mission_mode":      MISSION_MODE,
+        "neon_recording_id": neon_recording_id,
+    }
+    if slot_info:
+        record["slot_coords"]    = {k: [int(x), int(y)] for k, (x, y) in slot_info['slot_coords'].items()}
+        record["animal_size_px"] = slot_info['animal_size_px']
+
+    out_path = get_session_metadata_path(subject_id)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(record, f, indent=2, ensure_ascii=False)
+    return out_path

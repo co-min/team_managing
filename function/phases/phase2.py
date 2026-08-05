@@ -169,7 +169,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
         trial_index=trial_index,
         duration=DOMAIN_ONSET_DURATION,
     )
-    recorder.start_segment()
+    recorder.start_segment("CHOICE1")
 
     # ── Choice 1 ──────────────────────────────────────────────────────────────
     keyboard.reset_colors()
@@ -193,7 +193,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     _apply_synergy_colors(factory, char_list, choice1_idx, choice1_code, synergy)
 
     # ── Choice 2 ──────────────────────────────────────────────────────────────
-    recorder.start_segment()
+    recorder.start_segment("CHOICE2")
     keyboard.reset_colors()
     keyboard.set_excluded(choice1_idx)
     _, choice2_code, rt2 = _run_choice_loop(

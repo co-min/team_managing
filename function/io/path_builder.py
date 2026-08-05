@@ -52,6 +52,11 @@ def build_trial_save_dir(
     return get_subject_dir(subject_id) / f"block_{block_i}" / phase / domain / stim_pair_id
 
 
+def get_session_metadata_path(subject_id: str) -> Path:
+    """Return path to data/sub-{subject_id}/session_metadata.json"""
+    return get_subject_dir(subject_id) / "session_metadata.json"
+
+
 def ensure_trial_save_dir(
     subject_id: str,
     block_i: int,

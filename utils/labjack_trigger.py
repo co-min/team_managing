@@ -90,6 +90,16 @@ TRIG_P1_TRIAL_END   = 231
 TRIG_P2_TRIAL_END   = 232
 TRIG_P3_TRIAL_END   = 233
 
+# =========================================
+# Block and experiment boundaries
+# =========================================
+
+TRIG_P1_BLOCK_START = 221
+TRIG_P2_BLOCK_START = 222
+TRIG_P3_BLOCK_START = 223
+
+TRIG_TASK_START     = 241
+
 
 
 

@@ -23,6 +23,8 @@ def show_domain_onset(
     _pending_trig = trial_start_trigger
     _pending_neon = (neon_client is not None)
 
+    recorder.start_segment("DOMAIN_ONSET")   # labels all frames in this window
+
     while clock.getTime() < duration:
         factory.draw_domain_only()
         if _pending_trig is not None:
@@ -35,6 +37,6 @@ def show_domain_onset(
                 task_type="trial", phase="DOMAIN_ONSET", trial_index=trial_index,
             )
             _pending_neon = False
-        recorder.flip_and_log(win, marker="domain_onset")
+        recorder.flip_and_log(win)   # auto-generates "DOMAIN_ONSET_onset" on first frame
 
     event.clearEvents()

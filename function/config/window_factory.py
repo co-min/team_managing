@@ -267,6 +267,18 @@ class VisualObjectFactory:
 
         self.char_list = list(char_order)
 
+    def get_slot_info(self) -> dict:
+        """Return slot pixel positions and animal image size for AOI construction.
+
+        slot_coords maps slot name → (x, y) in PsychoPy pixel units (origin = screen center).
+        Use animal_size_px as the AOI bounding-box side length (images are square).
+        """
+        slot_names = ['up', 'down', 'right', 'left']
+        return {
+            'slot_coords':    {name: pos for name, pos in zip(slot_names, self._slot_positions)},
+            'animal_size_px': self._animal_size,
+        }
+
     def draw_domain_only(self):
         """Domain 이미지만 그립니다 — domain onset 구간(동물 등장 전)에서 사용."""
         self.domain_stims[self._current_domain].draw()

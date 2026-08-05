@@ -15,12 +15,13 @@ FRAME_LOG_FILENAME = "frame_log.csv"
 FIELDNAMES = [
     "frame_idx",
     "phase",
+    "segment",        # "DOMAIN_ONSET" | "CHOICE1" | "CHOICE2" | "" — screen phase within trial
     "trial_id",
     "stim_pair_id",
     "elapsed_time",
     "global_time",
     "flip_time",
-    "event_marker",
+    "event_marker",   # "{SEGMENT}_onset" | "{SEGMENT}_response" | "{SEGMENT}_timeout" | ""
     "ttl_code",
 ]
 

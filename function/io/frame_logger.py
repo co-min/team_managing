@@ -21,6 +21,7 @@ class FrameLog(TypedDict):
     phase:        str
     trial_id:     int
     stim_pair_id: str
+    segment:      str           # "DOMAIN_ONSET" | "CHOICE1" | "CHOICE2" | ""
     onset_time:   Optional[float]
     rows:         List[Dict[str, Any]]
     ttl_code:     Optional[int]
@@ -31,6 +32,7 @@ def make_frame_log(phase: str, trial_id: int, stim_pair_id: str) -> FrameLog:
         "phase":        phase,
         "trial_id":     trial_id,
         "stim_pair_id": stim_pair_id,
+        "segment":      "",
         "onset_time":   None,
         "rows":         [],
         "ttl_code":     None,
@@ -56,6 +58,7 @@ def log_frame(
     row: Dict[str, Any] = {
         "frame_idx":    frame_idx,
         "phase":        log["phase"],
+        "segment":      log.get("segment", ""),
         "trial_id":     log["trial_id"],
         "stim_pair_id": log["stim_pair_id"],
         "elapsed_time": round(elapsed, 6),
@@ -101,14 +104,18 @@ class FrameRecorder:
         self.idx = 0
         self.photodiode = photodiode
 
-    def start_segment(self) -> None:
+    def start_segment(self, segment_label: str = "") -> None:
         """Mark the next ``flip_and_log`` as a new segment's first frame.
 
         Resets the frame counter to 0 so the next flip re-sets onset. Use when
         one phase presents several independently-timed segments through the same
         log (e.g. Phase 2's sequential option presentation).
+        *segment_label* is written into ``frame_log["segment"]`` so every row
+        recorded under this segment carries the label — enabling trial-phase
+        identification from frame_log.csv without Neon events.
         """
         self.idx = 0
+        self.frame_log["segment"] = segment_label
 
     def flip_and_log(
         self,
@@ -134,7 +141,11 @@ class FrameRecorder:
         if self.idx == 0:
             self.frame_log = set_onset(self.frame_log, flip_time)
         if marker is None:
-            marker = "stimulus_onset" if self.idx == 0 else ""
+            seg = self.frame_log.get("segment", "")
+            if self.idx == 0:
+                marker = f"{seg}_onset" if seg else "stimulus_onset"
+            else:
+                marker = ""
         self.frame_log = log_frame(
             self.frame_log,
             frame_idx=self.idx,
@@ -156,7 +167,9 @@ class FrameRecorder:
         flip so the sync pulse appears precisely at the response/timeout event.
         The flip_time recorded is that new flip (not win.lastFrameT).
         """
-        event_marker = "response" if result["response"] else "timeout"
+        event_type   = "response" if result["response"] else "timeout"
+        seg          = self.frame_log.get("segment", "")
+        event_marker = f"{seg}_{event_type}" if seg else event_type
 
         if self.photodiode is not None:
             self.photodiode.trigger()
