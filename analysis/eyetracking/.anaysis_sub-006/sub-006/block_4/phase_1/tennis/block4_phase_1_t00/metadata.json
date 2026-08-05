@@ -1,0 +1,51 @@
+{
+  "subject_id": "006",
+  "session_id": "20260805T145837",
+  "neon_recording_id": "d17244fd-0b3d-4607-90cb-8c7a1de3ce43",
+  "block": "block_4",
+  "phase": "phase_1",
+  "domain": "tennis",
+  "trial_id": 0,
+  "stim_pair_id": "block4_phase_1_t00",
+  "trial_layout": {
+    "up": "kappa",
+    "down": "fox",
+    "right": "mouse",
+    "left": "hippo"
+  },
+  "response_made": true,
+  "choice1_code": "D",
+  "choice2_code": "C",
+  "choice1_animal": "mouse",
+  "choice2_animal": "kappa",
+  "trig_choice1": 60,
+  "trig_choice2": 83,
+  "rt_choice1": 3.8393,
+  "rt_choice2": 2.2109,
+  "feedback_score": 50.0,
+  "elapsed_time": 753.2042,
+  "timestamp": "2026-08-05T15:11:18",
+  "win_size": [
+    2560,
+    1600
+  ],
+  "slot_coords": {
+    "up": [
+      0,
+      112
+    ],
+    "down": [
+      0,
+      -528
+    ],
+    "right": [
+      384,
+      -208
+    ],
+    "left": [
+      -384,
+      -208
+    ]
+  },
+  "animal_size_px": 256
+}

@@ -1,0 +1,51 @@
+{
+  "subject_id": "006",
+  "session_id": "20260805T145837",
+  "neon_recording_id": "d17244fd-0b3d-4607-90cb-8c7a1de3ce43",
+  "block": "block_3",
+  "phase": "phase_2",
+  "domain": "repairing",
+  "trial_id": 1,
+  "stim_pair_id": "block3_phase_2_t01",
+  "trial_layout": {
+    "up": "elephant",
+    "down": "deer",
+    "right": "fish",
+    "left": "dog"
+  },
+  "response_made": true,
+  "choice1_code": "C",
+  "choice2_code": "A",
+  "choice1_animal": "elephant",
+  "choice2_animal": "deer",
+  "trig_choice1": 103,
+  "trig_choice2": 125,
+  "rt_choice1": 3.5222,
+  "rt_choice2": 0.3086,
+  "feedback_score": 50.0,
+  "elapsed_time": 591.5604,
+  "timestamp": "2026-08-05T15:08:36",
+  "win_size": [
+    2560,
+    1600
+  ],
+  "slot_coords": {
+    "up": [
+      0,
+      112
+    ],
+    "down": [
+      0,
+      -528
+    ],
+    "right": [
+      384,
+      -208
+    ],
+    "left": [
+      -384,
+      -208
+    ]
+  },
+  "animal_size_px": 256
+}

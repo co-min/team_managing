@@ -9,7 +9,11 @@ os.makedirs(OUT, exist_ok=True)
 
 records = []
 
+EXCLUDE = {'sub-001'}
+
 for s in sorted(os.listdir(BASE)):
+    if s in EXCLUDE:
+        continue
     sub_path = os.path.join(BASE, s)
 
     # sub-009 has a nested directory: data/sub-009/sub-009/

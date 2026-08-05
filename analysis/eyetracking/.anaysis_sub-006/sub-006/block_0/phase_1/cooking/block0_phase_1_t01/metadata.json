@@ -1,0 +1,51 @@
+{
+  "subject_id": "006",
+  "session_id": "20260805T145837",
+  "neon_recording_id": "d17244fd-0b3d-4607-90cb-8c7a1de3ce43",
+  "block": "block_0",
+  "phase": "phase_1",
+  "domain": "cooking",
+  "trial_id": 1,
+  "stim_pair_id": "block0_phase_1_t01",
+  "trial_layout": {
+    "up": "rabbit",
+    "down": "panda",
+    "right": "frog",
+    "left": "duck"
+  },
+  "response_made": true,
+  "choice1_code": "B",
+  "choice2_code": "D",
+  "choice1_animal": "frog",
+  "choice2_animal": "rabbit",
+  "trig_choice1": 42,
+  "trig_choice2": 68,
+  "rt_choice1": 3.0375,
+  "rt_choice2": 2.6115,
+  "feedback_score": 60.0,
+  "elapsed_time": 60.2598,
+  "timestamp": "2026-08-05T14:59:45",
+  "win_size": [
+    2560,
+    1600
+  ],
+  "slot_coords": {
+    "up": [
+      0,
+      112
+    ],
+    "down": [
+      0,
+      -528
+    ],
+    "right": [
+      384,
+      -208
+    ],
+    "left": [
+      -384,
+      -208
+    ]
+  },
+  "animal_size_px": 256
+}
