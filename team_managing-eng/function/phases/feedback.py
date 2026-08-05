@@ -1,0 +1,285 @@
+# function/phases/feedback.py
+"""
+Feedback phase — domain-specific score display with monkey narrator.
+
+  repairing : cleanliness level text  (stage 1=dirty → 6=clean)
+  cooking   : taste-label text
+
+Score normalization: domain min/max from stimuli/score_table.csv → stage 1-6
+"""
+
+import csv
+from psychopy import visual, core
+from function.config.settings import FB_TIME, FONT, SCORE_CSV, DOMAINS, MISSION_MODE
+from utils.event_utils import check_escape
+from utils.labjack_trigger import send_trigger
+
+# ── Layout constants ──────────────────────────────────────────────────────────
+
+_MONKEY_PATH     = "image/monkey.png"
+_MONKEY_SIZE     = (250, 250)
+_MONKEY_POS      = (-240,   0)
+_BUBBLE_POS      = ( 250,   0)
+_BUBBLE_TAIL_POS = (   5,   0)
+_DOMAIN_Y        = 260
+
+_CHOICE_ANIMAL_SIZE = (150, 150)
+_CHOICE_L_POS       = ( 165, 250)   # bubble-center x, left
+_CHOICE_R_POS       = ( 335, 250) 
+
+_DOMAIN_IMG_SIZE = (150, 150)
+_DOMAIN_IMG_POS = ( -200 , 250)
+
+_monkey_stim_cache: dict = {}
+
+# 6-step color ramp (red → green)
+_RESULT_COLORS = ["#F44336", "#FF5722", "#FF9800", "#FFEB3B", "#8BC34A", "#4CAF50"]
+
+
+# ── Score ranges from the active MODE's score CSV ─────────────────────────────
+
+def _load_score_ranges(csv_path=None, domains=None) -> dict:
+    if csv_path is None:
+        csv_path = SCORE_CSV
+    if domains is None:
+        domains = DOMAINS
+    col_map = {d: f'sc_{d}' for d in domains}
+    ranges  = {d: [float('inf'), float('-inf')] for d in domains}
+    try:
+        with open(csv_path, newline='', encoding='utf-8') as f:
+            for row in csv.DictReader(f, skipinitialspace=True):
+                for domain, col in col_map.items():
+                    val = float(row[col])
+                    if val < ranges[domain][0]:
+                        ranges[domain][0] = val
+                    if val > ranges[domain][1]:
+                        ranges[domain][1] = val
+    except Exception:
+        return {d: (3.0, 10.0) for d in domains}
+    return {d: (v[0], v[1]) for d, v in ranges.items()}
+
+
+_SCORE_RANGES = _load_score_ranges()
+
+if MISSION_MODE == 3:
+    from function.config.settings import P2_SCORE_CSV, P2_DOMAINS
+    P2_SCORE_RANGES = _load_score_ranges(P2_SCORE_CSV, P2_DOMAINS)
+else:
+    P2_SCORE_RANGES = _SCORE_RANGES
+
+
+def score_to_stage(score: float, domain: str, score_ranges: dict = None) -> int:
+    """Normalise raw score to stage 1–6 using domain min/max from score_table."""
+    ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
+    lo, hi = ranges.get(domain, (3.0, 9.0))
+    if hi == lo:
+        return 3
+    return max(1, min(6, int(1 + (score - lo) / (hi - lo) * 5 + 0.5)))
+
+
+# ── Domain builders ───────────────────────────────────────────────────────────
+
+
+def _build_text_stims(win: visual.Window, stage: int, domain_cfg: dict) -> list:
+    """Generic builder for domains described by a list of stim specs."""
+    stage_idx   = stage - 1
+    stage_color = domain_cfg['colors'][stage_idx]
+    return [
+        visual.TextStim(win, text=domain_cfg[s['key']][stage_idx], pos=s['pos'],
+                        color=stage_color, height=s['height'], bold=True, font=FONT)
+        for s in domain_cfg['stims']
+    ]
+
+
+def _monkey_text(score: float, stage: int, domain_cfg: dict, domain: str = '',
+                 score_ranges: dict = None) -> str:
+    comment = domain_cfg['monkey'][stage - 1]
+    ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
+    _, hi = ranges.get(domain, (0.0, 10.0))
+    max_score = int(hi) if hi == int(hi) else hi
+    return f"You scored {score:g} out of {max_score} points.\n{comment}"
+
+
+def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
+    wid = id(win)
+    if wid not in _monkey_stim_cache:
+        try:
+            _monkey_stim_cache[wid] = visual.ImageStim(
+                win, image=_MONKEY_PATH, size=_MONKEY_SIZE, pos=_MONKEY_POS
+            )
+        except Exception:
+            _monkey_stim_cache[wid] = None
+    return _monkey_stim_cache[wid]
+
+def _build_domain_img_stims(win: visual.Window, domain: str) -> list:
+    try:
+        return [visual.ImageStim(
+            win, image=f"image/domains/{domain}.png",
+            pos=_DOMAIN_IMG_POS, size=_DOMAIN_IMG_SIZE,
+        )]
+    except Exception:
+        return []
+
+
+def _build_choice_animal_stims(win: visual.Window,
+                            animal1: str = None, animal2: str = None) -> list:
+    stims = []
+    for animal, pos in [(animal1, _CHOICE_L_POS), (animal2, _CHOICE_R_POS)]:
+        if not animal:
+            continue
+        try:
+            stims.append(visual.ImageStim(
+                win, image=f"image/objectives/{animal}.png",
+                pos=pos, size=_CHOICE_ANIMAL_SIZE,
+            ))
+        except Exception:
+            pass
+    return stims
+
+
+def _build_monkey_stims(win: visual.Window, stage: int, domain_cfg: dict,
+                        score: float = 0.0, domain: str = '',
+                        score_ranges: dict = None) -> list:
+    bubble_text  = _monkey_text(score, stage, domain_cfg, domain, score_ranges)
+    bubble_color = _RESULT_COLORS[stage - 1]
+    stims = []
+    monkey = _get_monkey_stim(win)
+    if monkey is not None:
+        stims.append(monkey)
+    stims += [
+        visual.Rect(win, width=480, height=280, pos=_BUBBLE_POS,
+                    fillColor=bubble_color, lineColor=bubble_color),
+        visual.ShapeStim(win, vertices=[(-45, 0), (18, 25), (18, -25)],
+                        pos=_BUBBLE_TAIL_POS, fillColor=bubble_color, lineColor=bubble_color),
+        visual.TextStim(win, text=bubble_text,
+                        pos=_BUBBLE_POS, color='#222222', height=44, bold=True,
+                        font=FONT, wrapWidth=450),
+    ]
+    return stims
+
+
+# ── Domain configuration ──────────────────────────────────────────────────────
+
+_DOMAIN: dict[str, dict] = {
+    'repairing': {
+        'build':  _build_text_stims,
+        'monkey': [
+            "Still pretty dirty...",     # stage 1
+            "Quite dirty",               # stage 2
+            "A little dirty",            # stage 3
+            "The cleanliness is average", # stage 4
+            "Pretty clean!",              # stage 5
+            "Perfectly clean!",           # stage 6
+        ],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+    },
+    'cooking': {
+        'build':  _build_text_stims,
+        'monkey': [
+            "This dish tastes bad...",   # stage 1
+            "This dish isn't great",     # stage 2
+            "A bit disappointing",       # stage 3
+            "This dish is average",      # stage 4
+            "Really delicious!",         # stage 5
+            "Absolutely the best!",      # stage 6
+        ],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+    },
+    'tennis': {
+        'build':  _build_text_stims,
+        'monkey': [
+            "Lost the match badly...",   # stage 1
+            "A pretty disappointing match", # stage 2
+            "A bit disappointing",       # stage 3
+            "An average match",          # stage 4
+            "You played really well!",   # stage 5
+            "A perfect match!",          # stage 6
+        ],
+        'colors': _RESULT_COLORS,
+        'stims':  [],
+    },
+}
+
+
+# ── Public entry point ────────────────────────────────────────────────────────
+
+_DOMAIN_KO_ALL = {'cooking': 'Cooking', 'repairing': 'Repairing', 'tennis': 'Tennis'}
+_DOMAIN_KO = {d: _DOMAIN_KO_ALL[d] for d in DOMAINS}
+
+def _make_domain_xs(domains: list) -> dict:
+    n_domains = len(domains)
+    x_spacing = 300 if n_domains <= 2 else 250
+    return {d: int(-x_spacing * (n_domains - 1) / 2 + i * x_spacing) for i, d in enumerate(domains)}
+
+_DOMAIN_XS = _make_domain_xs(DOMAINS)
+
+# Per-domain score ceiling (used for max phase score calculation)
+_MAX_SCORE_PER_TRIAL = max(hi for _, hi in _SCORE_RANGES.values())
+
+
+def run_feedback(
+    win: visual.Window,
+    score: float,
+    domain: str,
+    cumulative_score: float = 0,
+    phase_score: float = 0,
+    domain_scores: dict = None,
+    n_trials_per_domain: int = 18,
+    block_domains: list = None,
+    handle=None,
+    trig_code: int = 0,
+    score_ranges: dict = None,
+    animal1: str = None,
+    animal2: str = None,
+) -> None:
+    """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
+    active_ranges  = score_ranges if score_ranges is not None else _SCORE_RANGES
+    stage          = score_to_stage(score, domain, active_ranges)
+    domain_cfg     = _DOMAIN.get(domain, _DOMAIN['cooking'])
+
+    active_domains = block_domains if block_domains is not None else DOMAINS
+    domain_xs      = _make_domain_xs(active_domains)
+    domain_ko      = {d: _DOMAIN_KO_ALL[d] for d in active_domains}
+    max_score_per_trial = max(hi for _, hi in active_ranges.values())
+    max_phase = n_trials_per_domain * len(domain_xs) * max_score_per_trial
+
+    domain_score_stims = []
+    if domain_scores:
+        for d, x in domain_xs.items():
+            val   = float(domain_scores.get(d, 0))
+            color = "#FF9800" if d == domain else "#AAAAAA"
+            domain_score_stims.append(visual.TextStim(
+                win, text=f"{domain_ko[d]}: {val} pts",
+                pos=(x, -225), color=color, height=38, font=FONT, bold=(d == domain),
+            ))
+
+    stims = (
+        _build_domain_img_stims(win, domain)
+        + _build_choice_animal_stims(win, animal1, animal2)
+        + domain_cfg['build'](win, stage, domain_cfg)
+        + _build_monkey_stims(win, stage, domain_cfg, score=score, domain=domain,
+                            score_ranges=active_ranges)
+        + domain_score_stims
+        + [
+            visual.TextStim(win, text=f"Phase score: {int(phase_score)}/{int(max_phase)} pts",
+                            pos=(0, -285), color="#AAAAAA", height=40, font=FONT, bold=False),
+            visual.TextStim(win, text=f"Total score: {float(cumulative_score)} pts",
+                            pos=(0, -340), color="#FFD700", height=48, font=FONT, bold=True),
+        ]
+    )
+
+    from psychopy import event as _event
+    _event.clearEvents()
+    clock           = core.Clock()
+    trigger_sent    = False
+    while clock.getTime() < FB_TIME:
+        for stim in stims:
+            stim.draw()
+        if not trigger_sent:
+            win.callOnFlip(send_trigger, handle, trig_code)
+            trigger_sent = True
+        win.flip()
+        check_escape(win)
+    _event.clearEvents()
