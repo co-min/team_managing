@@ -1,3 +1,0 @@
-marker-mapper export
-Find detailed documentation here: https://docs.pupil-labs.com/neon/pupil-cloud/enrichments/marker-mapper/ 
-Version 2

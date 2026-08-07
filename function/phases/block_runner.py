@@ -14,17 +14,7 @@ from function.phases.feedback import run_feedback
 from function.config.settings import CHAR_CODE as _CHAR_CODE
 from function.config.window_factory import get_shared_factory
 from utils.inter_trial import run_gaussian_iti
-from utils.labjack_trigger import (
-    send_trigger,
-    TRIG_P1_BLOCK_START, TRIG_P2_BLOCK_START, TRIG_P3_BLOCK_START,
-)
-
-_BLOCK_START_TRIG = {
-    'phase_1': TRIG_P1_BLOCK_START,
-    'phase_2': TRIG_P2_BLOCK_START,
-    'phase_3': TRIG_P3_BLOCK_START,
-}
-
+from utils.event_dispatch import on_block_start, PHASE_INT
 
 @dataclass
 class BlockConfig:
@@ -44,7 +34,9 @@ def _persist_trial(subject_id, record, rows, save_dir):
     save_frame_log(rows, save_dir)
 
 
-def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, n_per_domain, char_order=None, neon_client=None):
+def _handle_result(result, domain, cumulative, cfg, win, handle,
+                   phase_int, trial_index,
+                   n_per_domain, char_order=None, neon_client=None):
     """Update cumulative scores and show feedback. Returns the feedback score (0 if no result)."""
     if not result:
         return 0
@@ -54,7 +46,6 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
     cumulative['phase'] += score
     cumulative[domain]  += score
 
-    # char_ani codes (A/B/C/D) repeat across animals, so map via the trial's char_order
     if char_order:
         code_to_animal = {_CHAR_CODE[a]: a for a in char_order}
         animal1 = code_to_animal.get(result['choice1'])
@@ -70,7 +61,8 @@ def _handle_result(result, domain, cumulative, cfg, win, handle, feedback_trig, 
         n_trials_per_domain=n_per_domain,
         block_domains=cfg.block_domains,
         handle=handle,
-        trig_code=feedback_trig,
+        phase=phase_int,
+        trial_index=trial_index,
         score_ranges=cfg.score_ranges,
         animal1=animal1,
         animal2=animal2,
@@ -107,7 +99,7 @@ def _launch_save_thread(
 
 def run_block_trials(
     block_index, phase, block_schedule, cfg,
-    win, global_clock, subject_id, handle, cumulative, feedback_trig,
+    win, global_clock, subject_id, handle, cumulative,
     neon_client=None,
 ):
     """
@@ -118,6 +110,7 @@ def run_block_trials(
     neon_client    : NeonEventClient | NullNeonClient (optional)
     File I/O is offloaded to a background thread during the following ITI.
     """
+    phase_int         = PHASE_INT.get(phase, 0)
     n_per_domain      = len(block_schedule) // len(cfg.block_domains)
     save_thread       = None
     session_id        = getattr(neon_client, 'session_id',   None)
@@ -125,11 +118,7 @@ def run_block_trials(
     slot_info         = get_shared_factory(win).get_slot_info()
     win_size          = (int(win.size[0]), int(win.size[1]))
 
-    send_trigger(handle, _BLOCK_START_TRIG.get(phase, 0))
-    neon_client.enqueue_events(
-        "BLOCK_START",
-        metadata={"task_type": "block", "phase": phase, "trial_index": block_index},
-    )
+    on_block_start(neon_client, handle, phase, block_index)
 
     for trial_index, trial_info in enumerate(block_schedule):
         domain       = trial_info['domain']
@@ -148,7 +137,8 @@ def run_block_trials(
 
         fb_score = _handle_result(
             result, domain, cumulative, cfg, win, handle,
-            feedback_trig, n_per_domain, char_order=char_order,
+            phase_int, trial_index,
+            n_per_domain, char_order=char_order,
             neon_client=neon_client,
         )
 

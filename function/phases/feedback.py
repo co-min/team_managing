@@ -12,7 +12,7 @@ import csv
 from psychopy import visual, core
 from function.config.settings import FB_TIME, FONT, SCORE_CSV, DOMAINS, MISSION_MODE
 from utils.event_utils import check_escape
-from utils.labjack_trigger import send_trigger
+from utils.event_dispatch import callonflip_feedback
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ _DOMAIN_Y        = 260
 
 _CHOICE_ANIMAL_SIZE = (150, 150)
 _CHOICE_L_POS       = ( 165, 250)   # bubble-center x, left
-_CHOICE_R_POS       = ( 335, 250) 
+_CHOICE_R_POS       = ( 335, 250)
 
 _DOMAIN_IMG_SIZE = (150, 150)
 _DOMAIN_IMG_POS = ( -200 , 250)
@@ -229,7 +229,8 @@ def run_feedback(
     n_trials_per_domain: int = 18,
     block_domains: list = None,
     handle=None,
-    trig_code: int = 0,
+    phase: int = 0,
+    trial_index: int = 0,
     score_ranges: dict = None,
     animal1: str = None,
     animal2: str = None,
@@ -279,9 +280,7 @@ def run_feedback(
         for stim in stims:
             stim.draw()
         if not trigger_sent:
-            win.callOnFlip(send_trigger, handle, trig_code)
-            if neon_client is not None:
-                neon_client.call_on_flip(win, "FEEDBACK_ONSET", task_type="feedback")
+            callonflip_feedback(win, neon_client, handle, phase, trial_index)
             trigger_sent = True
         win.flip()
         check_escape(win)

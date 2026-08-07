@@ -19,21 +19,12 @@ from function.phases.feedback import P2_SCORE_RANGES
 from function.phases.ending import run_ending
 from function.config.settings import NEON_SHUTDOWN_FLUSH_TIMEOUT_S
 from function.io.metadata import save_session_metadata
-from utils.labjack_trigger import (
-    send_trigger,
-    TRIG_P1_FEEDBACK, TRIG_P2_FEEDBACK, TRIG_P3_FEEDBACK,
-    TRIG_TASK_START,
-)
+from utils.labjack_trigger import send_trigger, TRIG_TASK_START
 from utils.screen_utils import show_instructions
 from utils.neon_client import save_neon_event_log
 
 
 _SCHEDULE_SEED = 42
-_FEEDBACK_TRIGGERS = {
-    'phase_1': TRIG_P1_FEEDBACK,
-    'phase_2': TRIG_P2_FEEDBACK,
-    'phase_3': TRIG_P3_FEEDBACK,
-}
 
 
 def _generate_block_schedules(animal_groups, block_phases):
@@ -121,7 +112,6 @@ def main() -> None:
             run_block_trials(
                 block_index, phase, block_schedule, cfg,
                 win, global_clock, subject_id, handle, cumulative,
-                feedback_trig=_FEEDBACK_TRIGGERS[phase],
                 neon_client=neon_client,
             )
         run_ending(win, subject_id, cumulative['total'], global_clock.getTime())
