@@ -200,7 +200,7 @@ class VisualObjectFactory:
                 win=self.win,
                 pos=info['pos'],
                 width=bz, height=bz,
-                lineWidth=14,
+                lineWidth=20,
                 lineColor= None,
                 fillColor=None,
                 units='pix'
@@ -226,7 +226,7 @@ class VisualObjectFactory:
         self._locked_chars.clear()
         for char_name in self.char_list:
             self._border_colors[char_name] = 'white'
-            self.border_stims[char_name].lineWidth = 10
+            self.border_stims[char_name].lineWidth = 20
             self.border_stims[char_name].setLineColor(None)  # opacity 대신 lineColor=None으로 완전 은닉
             self.block_stims[char_name].setFillColor('white')
             self.block_stims[char_name].opacity = 0

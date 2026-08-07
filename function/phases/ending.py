@@ -161,7 +161,7 @@ def run_ending(
 
     # ── header ────────────────────────────────────────────────────────────────
     stims: list = [
-        visual.TextStim(win, text="실험이 끝났습니다!",
+        visual.TextStim(win, text="게임이 끝났습니다!",
                         pos=(0, _TITLE_Y), color=_GOLD,
                         height=50, bold=True, font=FONT),
         visual.TextStim(win, text="수고하셨습니다.",

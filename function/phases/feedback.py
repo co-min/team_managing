@@ -13,6 +13,8 @@ from psychopy import visual, core
 from function.config.settings import FB_TIME, FONT, SCORE_CSV, DOMAINS, MISSION_MODE
 from utils.event_utils import check_escape
 from utils.event_dispatch import callonflip_feedback
+from function.io.frame_logger import FrameLog, FrameRecorder
+from function.io.frame_marker import get_shared_marker
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -235,6 +237,8 @@ def run_feedback(
     animal1: str = None,
     animal2: str = None,
     neon_client=None,
+    frame_log: FrameLog = None,
+    global_clock=None,
 ) -> None:
     """Display domain-specific feedback with monkey narrator for FB_TIME seconds."""
     active_ranges  = score_ranges if score_ranges is not None else _SCORE_RANGES
@@ -274,14 +278,28 @@ def run_feedback(
 
     from psychopy import event as _event
     _event.clearEvents()
-    clock           = core.Clock()
-    trigger_sent    = False
-    while clock.getTime() < FB_TIME:
-        for stim in stims:
-            stim.draw()
-        if not trigger_sent:
-            callonflip_feedback(win, neon_client, handle, phase, trial_index)
-            trigger_sent = True
-        win.flip()
-        check_escape(win)
+    clock        = core.Clock()
+    trigger_sent = False
+
+    if frame_log is not None and global_clock is not None:
+        recorder = FrameRecorder(frame_log, global_clock, photodiode=get_shared_marker())
+        recorder.start_segment("FEEDBACK")
+        while clock.getTime() < FB_TIME:
+            for stim in stims:
+                stim.draw()
+            if not trigger_sent:
+                callonflip_feedback(win, neon_client, handle, phase, trial_index)
+                trigger_sent = True
+            recorder.flip_and_log(win)
+            check_escape(win)
+    else:
+        while clock.getTime() < FB_TIME:
+            for stim in stims:
+                stim.draw()
+            if not trigger_sent:
+                callonflip_feedback(win, neon_client, handle, phase, trial_index)
+                trigger_sent = True
+            win.flip()
+            check_escape(win)
+
     _event.clearEvents()

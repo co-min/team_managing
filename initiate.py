@@ -65,6 +65,14 @@ def initiate() -> ExperimentContext:
     print("LabJack handle:", handle)
 
     # ── Neon eyetracker ───────────────────────────────────────────────────────
+    if USE_NEON:
+        from neon_check import check_neon_ready
+        print("• Neon 장치 확인 중 ...")
+        if not check_neon_ready(NEON_DISCOVERY_TIMEOUT_S):
+            print("✗ Neon 준비 안 됨 — Companion 앱에서 녹화를 시작한 뒤 재실행하세요.")
+            sys.exit(1)
+        print("✓ Neon 준비 완료")
+
     apriltags         = []
     neon_recording_id = None
 

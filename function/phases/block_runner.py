@@ -36,7 +36,8 @@ def _persist_trial(subject_id, record, rows, save_dir):
 
 def _handle_result(result, domain, cumulative, cfg, win, handle,
                    phase_int, trial_index,
-                   n_per_domain, char_order=None, neon_client=None):
+                   n_per_domain, char_order=None, neon_client=None,
+                   frame_log=None, global_clock=None):
     """Update cumulative scores and show feedback. Returns the feedback score (0 if no result)."""
     if not result:
         return 0
@@ -67,6 +68,8 @@ def _handle_result(result, domain, cumulative, cfg, win, handle,
         animal1=animal1,
         animal2=animal2,
         neon_client=neon_client,
+        frame_log=frame_log,
+        global_clock=global_clock,
     )
     return score
 
@@ -140,6 +143,7 @@ def run_block_trials(
             phase_int, trial_index,
             n_per_domain, char_order=char_order,
             neon_client=neon_client,
+            frame_log=frame_log, global_clock=global_clock,
         )
 
         save_thread = _launch_save_thread(
