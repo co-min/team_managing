@@ -24,7 +24,7 @@ def get_subject_info():
 # 1. Instructions screen helper
 # ─────────────────────────────────────────────────────────────────────────────
 
-def show_instructions(win, text: str):
+def show_instructions(win, text: str, advance_key: str = "space"):
     event.clearEvents()
     msg = visual.TextStim(
         win,
@@ -38,5 +38,5 @@ def show_instructions(win, text: str):
     )
     msg.draw()
     win.flip()
-    event.waitKeys(keyList=["space"])   # press space to continue
+    event.waitKeys(keyList=[advance_key])
     event.clearEvents()

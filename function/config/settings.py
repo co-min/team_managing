@@ -74,8 +74,8 @@ elif MISSION_MODE == 4:
     P2_SCORE_CSV      = _D3_RANKED_SCORE
     DOMAINS           = _DOMAINS_3
     P2_DOMAINS        = _DOMAINS_3
-    P1_TRIALS         = 18
-    P2_TRIALS         = 18
+    P1_TRIALS         = 15
+    P2_TRIALS         = 15
     COMPETENCE_COLOR  = _COLOR_3
     BLOCK_PHASES      = ['phase_1', 'phase_2', 'phase_1', 'phase_2', 'phase_1', 'phase_2']
 else:
@@ -100,7 +100,7 @@ MONITOR_NAME     = "testMonitor" # TODO: calibrate your monitor
 SCREEN_NUMBER    = 1
 
 # ─── Timing ──────────────────────────────────────────────────────────────────
-MAX_RESPONSE_TIME    = 30.0     # seconds; None = unlimited
+MAX_RESPONSE_TIME    = 300.0     # seconds; None = unlimited
 ITI_DURATION         = 1     # inter-trial interval (seconds)
 CHOICE_GAP           = 0.5      # seconds between Choice 1 and Choice 2
 FRAME_RATE           = 60       # Hz – used for frame log sanity checks
@@ -170,6 +170,14 @@ INST_PHASE2 = """\
 숨겨진 수행하는 능력을 예상하면서 만점인 동물 두 마리를 찾아볼까요?
 
 [Space] 키를 눌러 시작"""
+
+INST_BREAK = """\
+잠시 휴식 시간입니다.
+
+준비가 되면 실험자가 실험을 재개합니다."""
+
+# Blocks (1-indexed) that show a break screen before the phase instruction
+BREAK_BEFORE_BLOCKS = {3, 5}
 
 
 # ─── Practice ────────────────────────────────────────────────────────────────

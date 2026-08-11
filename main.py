@@ -3,7 +3,7 @@ from psychopy import core
 from initiate import initiate
 from function.config.settings import (
     MISSION_MODE,
-    P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2,
+    P1_TRIALS, P2_TRIALS, INST_PHASE1, INST_PHASE2, INST_BREAK, BREAK_BEFORE_BLOCKS,
     DOMAINS, P2_DOMAINS, DOMAIN_ORDER,
     PRACTICE_MODE, BLOCK_PHASES,
 )
@@ -100,6 +100,8 @@ def main() -> None:
 
         for block_index, (phase, block_schedule) in enumerate(zip(BLOCK_PHASES, block_schedules)):
             cfg = _get_block_config(phase, competence, synergy, score, phase2_score)
+            if (block_index + 1) in BREAK_BEFORE_BLOCKS:
+                show_instructions(win, INST_BREAK, advance_key="t")
             instruction = INST_PHASE1 if phase == 'phase_1' else INST_PHASE2
             show_instructions(win, instruction.format(
                 block_num=block_index + 1, total_blocks=len(BLOCK_PHASES)
