@@ -94,7 +94,7 @@ else:
 # ─── Window ───────────────────────────────────────────────────────────────────
 WINDOW_SIZE      = (1470, 956)   # TODO: adjust to your display
 WINDOW_UNITS     = "pix"
-WINDOW_FULLSCR   = True          # Set True for actual experiment
+WINDOW_FULLSCR   = False          # Set True for actual experiment
 BACKGROUND_COLOR = "#2b2b2b"     # Dark gray matching PDF screenshots
 MONITOR_NAME     = "testMonitor" # TODO: calibrate your monitor
 SCREEN_NUMBER    = 1
@@ -204,7 +204,7 @@ PRACTICE_END_DURATION = 3.0
 
 # ─── Neon eyetracker ─────────────────────────────────────────────────────────
 # Set USE_NEON=False to run without the eyetracker (NullNeonClient is used).
-USE_NEON = True
+USE_NEON = False
 
 NEON_DISCOVERY_TIMEOUT_S      = 10.0  # seconds to search for Companion device
 NEON_RETRY_INTERVAL_S         = 1.0   # seconds between failed send retries

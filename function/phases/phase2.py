@@ -152,6 +152,7 @@ def run_phase2_trial(win, global_clock, frame_log, synergy, domain, char_order, 
     choice1_idx, choice1_code, rt1 = _run_choice_loop(
         win, factory, keyboard, recorder, char_list, synergy,
         handle, phase=2, slot=1, trial_index=trial_index,
+        freeze_colors=True,
         neon_client=neon_client,
     )
     if choice1_code is None:
