@@ -1,0 +1,13 @@
+char_code,domain,category_label,category_value
+A,cooking,green,8.0
+A,repairing,yellow,5.0
+A,tennis,red,2.0
+B,cooking,yellow,5.0
+B,repairing,green,8.0
+B,tennis,red,2.0
+C,cooking,red,2.0
+C,repairing,yellow,5.0
+C,tennis,green,8.0
+D,cooking,green,8.0
+D,repairing,red,2.0
+D,tennis,yellow,5.0
