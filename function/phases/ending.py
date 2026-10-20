@@ -11,6 +11,7 @@ from pathlib import Path
 from psychopy import event, visual
 
 from function.config.settings import DATA_DIR, FONT, SCORE_CSV
+from function.config.strings import t
 from utils.event_utils import check_escape
 
 # ── colours ───────────────────────────────────────────────────────────────────
@@ -24,7 +25,6 @@ _GRAY   = "#AAAAAA"
 _WHITE  = "#FFFFFF"
 
 _RANK_COLORS = [_GOLD, _SILVER, _BRONZE, _BLUE]
-_RANK_LABELS = ["1위", "2위", "3위", "4위"]
 
 # ── layout ───────────────────────────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ def _rank_of(my_acc: float, entries: list[dict]) -> tuple[int, int]:
 
 def _fmt_elapsed(seconds: float) -> str:
     total = max(0, int(seconds))
-    return f"{total // 60}분 {total % 60:02d}초"
+    return t("ending_elapsed_fmt", m=total // 60, s=total % 60)
 
 
 # ── stim builders ─────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ def _row_stims(
     color: str,
     is_me: bool,
 ) -> list:
-    me_tag   = "  ← 나" if is_me else ""
+    me_tag   = t("ending_me_tag") if is_me else ""
     bg_color = "#2a2f52" if is_me else "#1a1a1a"
     line_w   = 2 if is_me else 0
 
@@ -161,13 +161,13 @@ def run_ending(
 
     # ── header ────────────────────────────────────────────────────────────────
     stims: list = [
-        visual.TextStim(win, text="게임이 끝났습니다!",
+        visual.TextStim(win, text=t("ending_title"),
                         pos=(0, _TITLE_Y), color=_GOLD,
                         height=50, bold=True, font=FONT),
-        visual.TextStim(win, text="수고하셨습니다.",
+        visual.TextStim(win, text=t("ending_subtitle"),
                         pos=(0, _SUBTITLE_Y), color=_WHITE,
                         height=38, font=FONT),
-        visual.TextStim(win, text="순위표  (정답률 기준)",
+        visual.TextStim(win, text=t("ending_leaderboard_header"),
                         pos=(0, _HEADER_Y), color=_GRAY,
                         height=28, font=FONT),
     ]
@@ -178,7 +178,7 @@ def run_ending(
         y     = _ROW_TOP_Y - i * _ROW_STEP
         color = _RANK_COLORS[i]
         is_me = entry["subject_id"] == subject_id
-        stims += _row_stims(win, _RANK_LABELS[i], entry["subject_id"],
+        stims += _row_stims(win, t("ending_rank_label", rank=i + 1), entry["subject_id"],
                             entry["accuracy"], y, color, is_me)
 
     # bottom y of the last shown row (centre)
@@ -192,7 +192,7 @@ def run_ending(
             visual.TextStim(win, text="·  ·  ·", pos=(0, ellipsis_y),
                             color=_GRAY, height=28, font=FONT)
         )
-        stims += _row_stims(win, f"{my_rank}위", subject_id,
+        stims += _row_stims(win, t("ending_rank_label", rank=my_rank), subject_id,
                             my_acc, my_y, _GREEN, is_me=True)
         last_row_y = my_y
 
@@ -204,23 +204,22 @@ def run_ending(
     stims += [
         visual.TextStim(
             win,
-            text=(
-                f"정답률  {my_acc * 100:.1f}%"
-                f"   ·   총 점수  {int(cumulative_score)}점"
-                f"   ·   소요시간  {_fmt_elapsed(elapsed_seconds)}"
-            ),
+            text=t("ending_stats",
+                   accuracy=f"{my_acc * 100:.1f}%",
+                   score=int(cumulative_score),
+                   elapsed=_fmt_elapsed(elapsed_seconds)),
             pos=(0, stats_y),
             color=_GRAY, height=28, font=FONT,
             wrapWidth=1400,
         ),
         visual.TextStim(
             win,
-            text=f"전체 {total}명 중  {my_rank}위",
+            text=t("ending_rank_summary", total=total, rank=my_rank),
             pos=(0, rank_y),
             color=_WHITE, height=34, bold=True, font=FONT,
             wrapWidth=800,
         ),
-        visual.TextStim(win, text="[ Space ] 키를 눌러 종료",
+        visual.TextStim(win, text=t("ending_exit_prompt"),
                         pos=(0, exit_y), color=_GRAY, height=28, font=FONT,
                         wrapWidth=800),
     ]

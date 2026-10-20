@@ -11,6 +11,7 @@ Score normalisation: domain min/max from stimuli/score_table.csv → stage 1–6
 import csv
 from psychopy import visual, core
 from function.config.settings import FB_TIME, FONT, SCORE_CSV, DOMAINS, MISSION_MODE
+from function.config.strings import t, domain_name, monkey_comment
 from utils.event_utils import check_escape
 from utils.event_dispatch import callonflip_feedback
 from function.io.frame_logger import FrameLog, FrameRecorder
@@ -95,11 +96,11 @@ def _build_text_stims(win: visual.Window, stage: int, domain_cfg: dict) -> list:
 
 def _monkey_text(score: float, stage: int, domain_cfg: dict, domain: str = '',
                  score_ranges: dict = None) -> str:
-    comment = domain_cfg['monkey'][stage - 1]
+    comment = monkey_comment(domain, stage)
     ranges = score_ranges if score_ranges is not None else _SCORE_RANGES
     _, hi = ranges.get(domain, (0.0, 10.0))
     max_score = int(hi) if hi == int(hi) else hi
-    return f"{max_score}점 만점에 {score:g}점이야.\n{comment}"
+    return t("feedback_bubble", max_score=max_score, score=f"{score:g}", comment=comment)
 
 
 def _get_monkey_stim(win: visual.Window) -> 'visual.ImageStim | None':
@@ -163,52 +164,13 @@ def _build_monkey_stims(win: visual.Window, stage: int, domain_cfg: dict,
 # ── Domain configuration ──────────────────────────────────────────────────────
 
 _DOMAIN: dict[str, dict] = {
-    'repairing': {
-        'build':  _build_text_stims,
-        'monkey': [
-            "아직 많이 지저분해...",   # stage 1
-            "꽤 지저분해",             # stage 2
-            "조금 지저분해",           # stage 3
-            "청소 상태가 보통이야",    # stage 4
-            "꽤 깨끗해!",             # stage 5
-            "완벽하게 깨끗해!",       # stage 6
-        ],
-        'colors': _RESULT_COLORS,
-        'stims':  [],
-    },
-    'cooking': {
-        'build':  _build_text_stims,
-        'monkey': [
-            "이 요리는 맛없어...",     # stage 1
-            "이 요리는 별로야",        # stage 2
-            "조금 아쉬워",             # stage 3
-            "이 요리는 보통이야",      # stage 4
-            "정말 맛있어!",           # stage 5
-            "완벽하게 최고야!",                # stage 6
-        ],
-        'colors': _RESULT_COLORS,
-        'stims':  [],
-    },
-    'tennis': {
-        'build':  _build_text_stims,
-        'monkey': [
-            "경기를 많이 졌어...",     # stage 1
-            "꽤 아쉬운 경기야",       # stage 2
-            "조금 아쉬워",             # stage 3
-            "보통 경기야",             # stage 4
-            "정말 잘 했어!",          # stage 5
-            "완벽한 경기야!",         # stage 6
-        ],
-        'colors': _RESULT_COLORS,
-        'stims':  [],
-    },
+    'repairing': {'build': _build_text_stims, 'colors': _RESULT_COLORS, 'stims': []},
+    'cooking':   {'build': _build_text_stims, 'colors': _RESULT_COLORS, 'stims': []},
+    'tennis':    {'build': _build_text_stims, 'colors': _RESULT_COLORS, 'stims': []},
 }
 
 
 # ── Public entry point ────────────────────────────────────────────────────────
-
-_DOMAIN_KO_ALL = {'cooking': '요리', 'repairing': '수리', 'tennis': '테니스'}
-_DOMAIN_KO = {d: _DOMAIN_KO_ALL[d] for d in DOMAINS}
 
 def _make_domain_xs(domains: list) -> dict:
     n_domains = len(domains)
@@ -247,7 +209,7 @@ def run_feedback(
 
     active_domains = block_domains if block_domains is not None else DOMAINS
     domain_xs      = _make_domain_xs(active_domains)
-    domain_ko      = {d: _DOMAIN_KO_ALL[d] for d in active_domains}
+    domain_names   = {d: domain_name(d) for d in active_domains}
     max_score_per_trial = max(hi for _, hi in active_ranges.values())
     max_phase = n_trials_per_domain * len(domain_xs) * max_score_per_trial
 
@@ -257,7 +219,7 @@ def run_feedback(
             val   = float(domain_scores.get(d, 0))
             color = "#FF9800" if d == domain else "#AAAAAA"
             domain_score_stims.append(visual.TextStim(
-                win, text=f"{domain_ko[d]}: {val}점",
+                win, text=t("feedback_domain_score", domain=domain_names[d], score=val),
                 pos=(x, -225), color=color, height=38, font=FONT, bold=(d == domain),
             ))
 
@@ -269,9 +231,9 @@ def run_feedback(
                             score_ranges=active_ranges)
         + domain_score_stims
         + [
-            visual.TextStim(win, text=f"단계 점수: {int(phase_score)}/{int(max_phase)}점",
+            visual.TextStim(win, text=t("feedback_phase_score", cur=int(phase_score), max=int(max_phase)),
                             pos=(0, -285), color="#AAAAAA", height=40, font=FONT, bold=False),
-            visual.TextStim(win, text=f"총 점수: {float(cumulative_score)}점",
+            visual.TextStim(win, text=t("feedback_total_score", score=float(cumulative_score)),
                             pos=(0, -340), color="#FFD700", height=48, font=FONT, bold=True),
         ]
     )

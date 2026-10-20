@@ -2,10 +2,17 @@ import platform
 from pathlib import Path
 import pandas as pd
 
+from function.config.strings import t
+
 # ─── Paths ───────────────────────────────────────────────────────────────────
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 _STIMULI = ROOT_DIR / 'stimuli'
+
+# ─── Language ─────────────────────────────────────────────────────────────────
+# True  : all participant-facing text is shown in English (see function/config/strings.py)
+# False : all participant-facing text is shown in Korean
+MODE_ENG = False
 
 # ─── Mode ─────────────────────────────────────────────────────────────────────
 # MODE 1 : competence_table.csv       + score_table.csv        (3 domains)
@@ -115,7 +122,7 @@ HOVER_ITI_MIN_DISPLAY = 0.3     # seconds before button becomes active
 HOVER_ITI_DWELL_TIME  = 0.5    # seconds of continuous hover to proceed
 HOVER_BUTTON_RADIUS   = 45     # pixels
 HOVER_BUTTON_LABEL    = "+"
-HOVER_PROMPT_TEXT     = "중앙을 응시해주세요."
+HOVER_PROMPT_TEXT     = t("hover_prompt")
 
 # ─── Colours ─────────────────────────────────────────────────────────────────
 WHITE_COLOR = "white"
@@ -155,26 +162,9 @@ SYNERGY_COLOR = dict(zip(_scores, _colors))
 
 # ─── Phase instructions ───────────────────────────────────────────────────────
 # ({block_num}/{total_blocks} filled in at runtime)
-INST_PHASE1 = """\
-[{block_num} / {total_blocks}]
-
-이번 단계에서, 각자 수행하는 능력이 보여요.
-숨겨진 팀워크를 생각하면서 만점인 동물 두 마리를 찾아볼까요?
-
-[Space] 키를 눌러 시작"""
-
-INST_PHASE2 = """\
-[{block_num} / {total_blocks} 블록]
-
-이번 단계에서, 협력하는 팀워크가 보여요.
-숨겨진 수행하는 능력을 예상하면서 만점인 동물 두 마리를 찾아볼까요?
-
-[Space] 키를 눌러 시작"""
-
-INST_BREAK = """\
-잠시 휴식 시간입니다.
-
-준비가 되면 실험자가 실험을 재개합니다."""
+INST_PHASE1 = t("inst_phase1")
+INST_PHASE2 = t("inst_phase2")
+INST_BREAK  = t("inst_break")
 
 # Blocks (1-indexed) that show a break screen before the phase instruction
 BREAK_BEFORE_BLOCKS = {3, 5}
@@ -186,19 +176,9 @@ PRACTICE_DOMAINS   = ['cooking', 'repairing']
 PRACTICE_P1_TRIALS = 4      # Phase 1 연습 총 trial 수
 PRACTICE_P2_TRIALS = 4      # Phase 2 연습 총 trial 수
 
-INST_PRACTICE_PHASE1 = (
-    "연습 1단계: 보이는 능력치\n\n"
-    "숨겨진 팀워크를 생각해보세요. 이 중 만점인 두 동물은 누굴까요?\n\n"
-    "[Space] 키를 눌러 시작"
-)
-
-INST_PRACTICE_PHASE2 = (
-    "연습 2단계: 보이는 팀워크\n\n"
-    "숨겨진 개인 능력을 생각해보세요. 이 중 만점인 두 동물은 누굴까요?\n\n"
-    "[Space] 키를 눌러 시작"
-)
-
-INST_PRACTICE_END     = "연습이 끝났습니다.\n잠시 후 본 실험이 시작됩니다."
+INST_PRACTICE_PHASE1 = t("inst_practice_phase1")
+INST_PRACTICE_PHASE2 = t("inst_practice_phase2")
+INST_PRACTICE_END     = t("inst_practice_end")
 PRACTICE_END_DURATION = 3.0
 
 
